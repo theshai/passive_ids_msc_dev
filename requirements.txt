@@ -1,0 +1,14 @@
+Flask
+fastapi
+uvicorn
+requests
+pytest
+supervisor
+numpy
+pandas
+scikit-learn
+matplotlib
+joblib
+jupyter
+scapy
+matplotlib

@@ -2,6 +2,9 @@ import loader as ld
 import inspector as insp
 from dataset_config_info import DATASET_CONFIG
 import cleaner as cl
+import preperrer as prep
+import encoderer as enc
+from sklearn.model_selection import train_test_split
 
 """generic function to analyze a dataset, given the file path, 
    ataset name, label column, and optional columns to load. 
@@ -67,7 +70,34 @@ def main() -> None:
         columns=config["columns"]
     )
 
-    #print_report(report)
+    print_report(report)
+
+    X,y = prep.prepare_xy(df,dataset_name)
+
+    print("\nFeatures (X):")
+    print(X.head())  
+
+    encoder = enc.create_encoder(X,dataset_name)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+     X,
+     y,
+     test_size=0.2,
+     random_state=42,
+     stratify=y
+    )  
+
+    X_train_encoded = encoder.fit_transform(X_train)
+    X_test_encoded = encoder.transform(X_test) 
+    
+    """
+    # Get encoded column names
+    encoded_column_names = encoder.get_feature_names_out()
+
+    print("\nEncoded columns:")
+    for column in encoded_column_names:
+        print(column)
+    """
 
     dataset_name = "cic2017"
 
@@ -91,6 +121,17 @@ def main() -> None:
         label_column="Label"
     )
     print_report(report)
+
+    X,y = prep.prepare_xy(df,dataset_name)
+
+    print("\nFeatures (X):")
+    print(X.head())  
+
+    print("\nFeatures (X):")
+    print(X.head())
+
+
+
 
 """
     file_path = (

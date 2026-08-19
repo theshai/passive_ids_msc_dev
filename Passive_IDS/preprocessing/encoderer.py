@@ -15,6 +15,7 @@ def create_encoder(X,dataset_name):
     """
     config = DATASET_CONFIG[dataset_name]
     columns_to_encode = config.get("categorical_columns", [])
+    columns_to_drop = config.get("drop_columns", [])    
 
     encoder = sk.compose.ColumnTransformer(
         transformers=[
@@ -25,9 +26,14 @@ def create_encoder(X,dataset_name):
                     sparse_output=False
                 ),
                 columns_to_encode
+            ),(
+                "drop",
+                "drop",
+                columns_to_drop
             )
         ],
-        remainder="passthrough"
+        remainder="passthrough",
+        verbose_feature_names_out=False
     )
-
+    encoder.set_output(transform="pandas")  # Set output to pandas DataFrame
     return encoder

@@ -6,6 +6,7 @@ import preperrer as prep
 import encoderer as enc
 import scaler as sc
 import sklearn as sk
+import splitter as splt
 from sklearn.metrics import (accuracy_score,
     precision_score,
     recall_score,
@@ -16,6 +17,9 @@ from sklearn.metrics import (accuracy_score,
     classification_report
 )                                              
 from sklearn.model_selection import train_test_split
+from xgboost import XGBClassifier
+import featureselector as fs
+import analyzer as an
 
 """generic function to analyze a dataset, given the file path, 
    ataset name, label column, and optional columns to load. 
@@ -88,34 +92,65 @@ def main() -> None:
     print("\nFeatures (X):")
     print(X.head())  
 
-    encoder = enc.create_encoder(X,dataset_name)
+    
 
-    X_train, X_test, y_train, y_test = train_test_split(
-     X,
-     y,
-     test_size=0.2,
-     random_state=42,
-     stratify=y
-    )  
+    X_train, X_test, y_train, y_test = splt.split_dataset(
+        X,
+        y,
+        dataset_name,
+        test_size=0.2,
+        random_state=42
+    )
+    
+    #encoding the categorical features using one-hot encoding, and scaling the features using standard scaling. The encoded and scaled features will be used to train a logistic regression model, and the model will be evaluated using various metrics.
+    encoder = enc.create_encoder(X,dataset_name)
 
     X_train_encoded = encoder.fit_transform(X_train)
     X_test_encoded = encoder.transform(X_test) 
 
     print(X_train_encoded.head())
 
-    scaler = sc.create_scaler(X_train_encoded,dataset_name)
+    xgb_model = XGBClassifier(
+    n_estimators=200,
+    max_depth=6,
+    learning_rate=0.1,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    objective="binary:logistic",
+    eval_metric="logloss",
+    random_state=42
+    )
 
-    X_train_scaled = scaler.fit_transform(X_train_encoded)
-    X_test_scaled = scaler.transform(X_test_encoded)  
+    # Apply feature selection -select the method you want
+    X_train_selected, X_test_selected = fs.apply_feature_selection(
+        X_train_encoded,
+        X_test_encoded,
+        y_train,
+        method="variance",  # Options: "none", "variance", "correlation", "mutual_info", "select_k_best"
+        threshold=0.01
+    )
 
-    # first model
-    lr_model = sk.linear_model.LogisticRegression(max_iter=1000,random_state=42)
-    lr_model.fit(X_train_scaled, y_train)
+    
+    print("trying scaled training the model.....")
+    scaler = sc.create_scaler(X_train_selected,dataset_name)
+
+    X_train_scaled = scaler.fit_transform(X_train_selected)
+    X_test_scaled = scaler.transform(X_test_selected)  
+
+    # calling generic analyzing function
+    an.analize_model(X_train_scaled, X_test_scaled, y_train, y_test)
+   
+
+    
+    """
+    # first try with the selected features, and then train a new logistic regression model using the selected features. The new model will be evaluated using the same metrics as before.
+    lr_model = sk.linear_model.LogisticRegression(max_iter=2000,random_state=42)
+    lr_model.fit(X_train_selected, y_train)
     print("Logistic Regression model trained.....")
 
-    y_pred = lr_model.predict(X_test_scaled)
+    y_pred = lr_model.predict(X_test_selected)
     # for roc-auc, we need the predicted probabilities for the positive class
-    y_pred_proba = lr_model.predict_proba(X_test_scaled)[:, 1]
+    y_pred_proba = lr_model.predict_proba(X_test_selected)[:, 1]
 
     # Calculate metrics
     accuracy = accuracy_score(y_test, y_pred)
@@ -137,71 +172,6 @@ def main() -> None:
 
     print("\nClassification Report")
     print(classification_report(y_test, y_pred))
-    
     """
-    # Get encoded column names
-    encoded_column_names = encoder.get_feature_names_out()
-
-    print("\nEncoded columns:")
-    for column in encoded_column_names:
-        print(column)
-    """
-
-    dataset_name = "cic2017"
-
-    config = DATASET_CONFIG[dataset_name]
-
-    df , report = analyze_dataset(
-        file_path=config["file_path"],
-        dataset_name=dataset_name,
-        label_column=config["label_column"],
-        columns=config["columns"]
-    )
-
-    print_report(report)
-
-    "try cleaning the dataset using the cleaner module, and then inspect the cleaned dataset using the inspector module. The function will return the cleaned DataFrame and the inspection report."
-     
-    df_cleaned = cl.clean_dataset(df)
-    
-    report = insp.inspect_dataset(
-        df=df_cleaned,
-        label_column="Label"
-    )
-    print_report(report)
-
-    X,y = prep.prepare_xy(df,dataset_name)
-
-    print("\nFeatures (X):")
-    print(X.head())  
-
-    print("\nFeatures (X):")
-    print(X.head())
-
-
-
-
-"""
-    file_path = (
-        "datasets/RAW/UNSW-NB15/UNSW_NB15_training-set.csv"
-    )
-
-    # Step 1: Load the raw file.
-    df = ld.function_load_dataset_with_header(
-        file_path=file_path,
-        header=0,
-        sep=","
-    )
-
-    # The returned DataFrame is now passed to the inspector.
-    report = insp.inspect_dataset(
-        df=df,
-        label_column="label"
-    )
-
-    print(df.head())
-
-    print_report(report)
-"""
 if __name__ == "__main__":
     main()

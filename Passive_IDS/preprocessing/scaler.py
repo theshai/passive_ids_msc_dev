@@ -12,6 +12,10 @@ def create_scaler(X, dataset_name):
         StandardScaler: The created standard scaler.
     """
     scaler = sk.preprocessing.StandardScaler()
+
+    #concert back to pandas dataframe after scaling
+    scaler.set_output(transform="pandas")
+    
     return scaler   
 
     

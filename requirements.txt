@@ -12,3 +12,4 @@ joblib
 jupyter
 scapy
 matplotlib
+xgboost

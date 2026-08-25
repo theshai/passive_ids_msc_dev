@@ -121,14 +121,18 @@ def main() -> None:
     random_state=42
     )
 
+    print("X train before feature selection shape:", X_train_encoded.shape)
+
     # Apply feature selection -select the method you want
-    X_train_selected, X_test_selected = fs.apply_feature_selection(
+    X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
         X_train_encoded,
         X_test_encoded,
         y_train,
-        method="variance",  # Options: "none", "variance", "correlation", "mutual_info", "select_k_best"
+        method="select_k_best",  # Options: "none", "variance", "correlation", "mutual_info", "select_k_best"
         threshold=0.01
     )
+
+    print("X train after feature selection shape:", X_train_selected.shape)
 
     
     print("trying scaled training the model.....")

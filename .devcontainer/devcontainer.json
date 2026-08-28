@@ -21,10 +21,7 @@
   "build": {
     "dockerfile": "../Dockerfile"
   },
-  "runArgs": [
-    "--name=IDS_ver1"
-  ],
-  "workspaceFolder": "/workspace",
+   "workspaceFolder": "/workspace",
 
   "mounts": [
     "source=${localWorkspaceFolder},target=/workspace,type=bind"

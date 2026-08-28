@@ -20,7 +20,10 @@ def apply_feature_selection(X_train,X_test,y_train,method="none",threshold=0.0,k
     """
     
     if method == "none":
-        return X_train, X_test
+        X_train_selected = X_train.copy()
+        X_test_selected = X_test.copy()
+        selected_columns=X_train.columns.tolist()
+        removed_columns=[]
     
     elif method == "variance":
         from sklearn.feature_selection import VarianceThreshold

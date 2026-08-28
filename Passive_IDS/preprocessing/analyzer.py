@@ -8,11 +8,12 @@ from sklearn.metrics import (accuracy_score,
         confusion_matrix,
         classification_report
 )     
+from xgboost import XGBClassifier
 
-def analize_model(X_train_scaled, X_test_scaled, y_train, y_test):                         
+def analize_model_regression(X_train_scaled, X_test_scaled, y_train, y_test):                         
 
         # first model
-        lr_model = sk.linear_model.LogisticRegression(max_iter=2000,random_state=42)
+        lr_model = sk.linear_model.LogisticRegression(max_iter=1000,random_state=42)
         lr_model.fit(X_train_scaled, y_train)
         print("Logistic Regression model trained.....")
 
@@ -20,23 +21,78 @@ def analize_model(X_train_scaled, X_test_scaled, y_train, y_test):
         # for roc-auc, we need the predicted probabilities for the positive class
         y_pred_proba = lr_model.predict_proba(X_test_scaled)[:, 1]
 
-        # Calculate metrics
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred)
-        recall = recall_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
-        mcc = matthews_corrcoef(y_test, y_pred)
-        roc_auc = roc_auc_score(y_test, y_pred_proba)
-
-        print("Accuracy:", accuracy)
-        print("Precision:", precision)
-        print("Recall:", recall)
-        print("F1 Score:", f1)
-        print("Matthews Correlation Coefficient:", mcc)
-        print("ROC-AUC:", roc_auc)
-
+        """
         print("\nConfusion Matrix")
         print(confusion_matrix(y_test, y_pred))
 
         print("\nClassification Report")
         print(classification_report(y_test, y_pred))
+        """
+        return calculate_metrics(y_test, y_pred, y_pred_proba)
+
+def analize_model_xgboost(X_train, X_test, y_train, y_test):   
+        
+        xgb_model = XGBClassifier(
+        n_estimators=200,
+        max_depth=6,
+        learning_rate=0.1,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        objective="binary:logistic",
+        eval_metric="logloss",
+        random_state=42
+        )
+        
+        xgb_model.fit(X_train, y_train)
+        print("XGBoost model trained.....")
+
+        y_pred = xgb_model.predict(X_test)
+        # for roc-auc, we need the predicted probabilities for the positive class
+        y_pred_proba = xgb_model.predict_proba(X_test)[:, 1]
+            
+        return calculate_metrics(y_test, y_pred, y_pred_proba)
+
+
+def calculate_metrics(
+    y_test,
+    y_pred,
+    y_pred_proba
+):
+    accuracy = accuracy_score(
+        y_test,
+        y_pred
+    )
+
+    precision = precision_score(
+        y_test,
+        y_pred
+    )
+
+    recall = recall_score(
+        y_test,
+        y_pred
+    )
+
+    f1 = f1_score(
+        y_test,
+        y_pred
+    )
+
+    mcc = matthews_corrcoef(
+        y_test,
+        y_pred
+    )
+
+    roc_auc = roc_auc_score(
+        y_test,
+        y_pred_proba
+    )
+
+    return (
+        accuracy,
+        precision,
+        recall,
+        f1,
+        mcc,
+        roc_auc
+    )        

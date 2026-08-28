@@ -110,17 +110,102 @@ def main() -> None:
 
     print(X_train_encoded.head())
 
-    xgb_model = XGBClassifier(
-    n_estimators=200,
-    max_depth=6,
-    learning_rate=0.1,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    objective="binary:logistic",
-    eval_metric="logloss",
-    random_state=42
-    )
+    
 
+    #experimanting with different feature selection methods and thresholds, and analyzing the results using the generic analyzing function. The feature selection methods include variance thresholding, correlation thresholding, mutual information, and select k best. The thresholds for each method can be adjusted to see how they affect the model performance.
+    
+    feature_selection_results = []
+    feature_selection_results.append(["testing-model","method","parameters","features","accuracy","precision","recall","f1","mcc","roc_auc"])
+    feature_selection_methods = [
+    {"method": "none"}
+    ]
+
+    for threshold in [
+        0,
+        0.001,
+        0.005,
+        0.01
+    ]:
+        feature_selection_methods.append({
+            "method": "variance",
+            "threshold": threshold
+        })
+
+    for threshold in [
+        0.80,
+        0.90,
+        0.95,
+        0.99
+    ]:
+        feature_selection_methods.append({
+            "method": "correlation",
+            "threshold": threshold
+        })
+
+    for threshold in [
+         0.005,
+         0.0075,
+         0.01,
+         0.0125,
+         0.015,
+         0.02
+        ]:
+        feature_selection_methods.append({
+            "method": "mutual_info",
+            "threshold": threshold
+        })
+
+    for k in [
+        20,
+        40,
+        60,
+        80,
+        100
+    ]:
+        feature_selection_methods.append({
+            "method": "select_k_best",
+            "k": k
+        })
+
+    for method_config in feature_selection_methods:
+        x = method_config["method"]
+        threshold = method_config.get("threshold", 0.0)
+        k = method_config.get("k", 20)
+
+        print(f"\nApplying feature selection method: {x} with threshold: {threshold} and k: {k}")
+        
+        X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
+            X_train_encoded,
+            X_test_encoded,
+            y_train,
+            method=x,
+            threshold=threshold,
+            k=k
+        )
+
+        # calling xgboost function
+        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_xgboost(X_train_selected, X_test_selected, y_train, y_test)
+        feature_selection_results.append(["XGBoost",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
+      
+
+        #print("X train after feature selection shape:", X_train_selected.shape)
+        #scale needed for logistic regression, so we will scale the features using standard scaling. The scaled features will be used to train a logistic regression model, and the model will be evaluated using various metrics.  
+        scaler = sc.create_scaler(X_train_selected,dataset_name)
+
+        X_train_scaled = scaler.fit_transform(X_train_selected)
+        X_test_scaled = scaler.transform(X_test_selected)  
+
+        # calling generic analyzing function
+        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_regression(X_train_scaled, X_test_scaled, y_train, y_test)
+        feature_selection_results.append(["Logistic Regression",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
+      
+    for result in feature_selection_results:
+        print(result)
+
+
+
+    
+    """
     print("X train before feature selection shape:", X_train_encoded.shape)
 
     # Apply feature selection -select the method you want
@@ -146,7 +231,7 @@ def main() -> None:
    
 
     
-    """
+    
     # first try with the selected features, and then train a new logistic regression model using the selected features. The new model will be evaluated using the same metrics as before.
     lr_model = sk.linear_model.LogisticRegression(max_iter=2000,random_state=42)
     lr_model.fit(X_train_selected, y_train)

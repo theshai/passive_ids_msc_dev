@@ -9,8 +9,27 @@ from sklearn.metrics import (accuracy_score,
         classification_report
 )     
 from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestClassifier
 
-def analize_model_regression(X_train_scaled, X_test_scaled, y_train, y_test):                         
+def analize_model_random_forest(X_train, X_test, y_train, y_test):
+
+        random_forset_model = RandomForestClassifier(
+        n_estimators=200,
+        random_state=42,
+        n_jobs=-1
+        )
+
+        random_forset_model.fit(X_train,y_train) 
+        print("Random forest model trained.....")
+        y_pred = random_forset_model.predict(X_test)
+
+        y_pred_proba = random_forset_model.predict_proba( X_test)[:, 1]
+        
+        return calculate_metrics(y_test, y_pred, y_pred_proba)   
+    
+
+
+def analize_model_logostic_regression(X_train_scaled, X_test_scaled, y_train, y_test):                         
 
         # first model
         lr_model = sk.linear_model.LogisticRegression(max_iter=1000,random_state=42)
@@ -52,7 +71,7 @@ def analize_model_xgboost(X_train, X_test, y_train, y_test):
             
         return calculate_metrics(y_test, y_pred, y_pred_proba)
 
-
+# standard function to calculate metrics (for all models)
 def calculate_metrics(
     y_test,
     y_pred,

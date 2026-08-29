@@ -21,6 +21,7 @@ from xgboost import XGBClassifier
 import featureselector as fs
 import analyzer as an
 
+
 """generic function to analyze a dataset, given the file path, 
    ataset name, label column, and optional columns to load. 
    The function will load the dataset using the loader module,
@@ -186,6 +187,10 @@ def main() -> None:
         # calling xgboost function
         accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_xgboost(X_train_selected, X_test_selected, y_train, y_test)
         feature_selection_results.append(["XGBoost",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
+       
+        # calling random forest function
+        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_random_forest(X_train_selected, X_test_selected, y_train, y_test)
+        feature_selection_results.append(["RandomForset",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
       
 
         #print("X train after feature selection shape:", X_train_selected.shape)
@@ -196,7 +201,7 @@ def main() -> None:
         X_test_scaled = scaler.transform(X_test_selected)  
 
         # calling generic analyzing function
-        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_regression(X_train_scaled, X_test_scaled, y_train, y_test)
+        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_logostic_regression(X_train_scaled, X_test_scaled, y_train, y_test)
         feature_selection_results.append(["Logistic Regression",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
       
     for result in feature_selection_results:

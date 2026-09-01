@@ -1,12 +1,12 @@
-import loader as ld
-import inspector as insp
-from dataset_config_info import DATASET_CONFIG
-import cleaner as cl
-import preperrer as prep
-import encoderer as enc
-import scaler as sc
+import preprocessing.loader as ld
+import preprocessing.inspector as insp
+from preprocessing.dataset_config_info import DATASET_CONFIG
+import preprocessing.cleaner as cl
+import preprocessing.preperrer as prep
+import preprocessing.encoderer as enc
+import preprocessing.scaler as sc
 import sklearn as sk
-import splitter as splt
+import preprocessing.splitter as splt
 from sklearn.metrics import (accuracy_score,
     precision_score,
     recall_score,
@@ -18,8 +18,10 @@ from sklearn.metrics import (accuracy_score,
 )                                              
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
-import featureselector as fs
-import analyzer as an
+import preprocessing.featureselector as fs
+import preprocessing.analyzer as an
+from models.hyperparameter_tuner import tune_random_forest
+
 
 
 """generic function to analyze a dataset, given the file path, 
@@ -116,7 +118,7 @@ def main() -> None:
     #experimanting with different feature selection methods and thresholds, and analyzing the results using the generic analyzing function. The feature selection methods include variance thresholding, correlation thresholding, mutual information, and select k best. The thresholds for each method can be adjusted to see how they affect the model performance.
     
     feature_selection_results = []
-    feature_selection_results.append(["testing-model","method","parameters","features","accuracy","precision","recall","f1","mcc","roc_auc"])
+    feature_selection_results.append(["testing-model","method","parameters","features","accuracy","precision","recall","f1","mcc","roc_auc","fpr"])
     feature_selection_methods = [
     {"method": "none"}
     ]
@@ -168,6 +170,8 @@ def main() -> None:
             "k": k
         })
 
+    #this part to get the best fs ....after you find it, dont call again unless you have a new model or a new ds
+    """
     for method_config in feature_selection_methods:
         x = method_config["method"]
         threshold = method_config.get("threshold", 0.0)
@@ -185,12 +189,12 @@ def main() -> None:
         )
 
         # calling xgboost function
-        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_xgboost(X_train_selected, X_test_selected, y_train, y_test)
-        feature_selection_results.append(["XGBoost",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
+        accuracy, precision, recall, f1, mcc, roc_auc,fpr = an.analize_model_xgboost(X_train_selected, X_test_selected, y_train, y_test)
+        feature_selection_results.append(["XGBoost",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc,fpr])
        
         # calling random forest function
-        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_random_forest(X_train_selected, X_test_selected, y_train, y_test)
-        feature_selection_results.append(["RandomForset",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
+        accuracy, precision, recall, f1, mcc, roc_auc,fpr = an.analize_model_random_forest(X_train_selected, X_test_selected, y_train, y_test)
+        feature_selection_results.append(["RandomForset",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc,fpr])
       
 
         #print("X train after feature selection shape:", X_train_selected.shape)
@@ -201,14 +205,27 @@ def main() -> None:
         X_test_scaled = scaler.transform(X_test_selected)  
 
         # calling generic analyzing function
-        accuracy, precision, recall, f1, mcc, roc_auc = an.analize_model_logostic_regression(X_train_scaled, X_test_scaled, y_train, y_test)
-        feature_selection_results.append(["Logistic Regression",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc])
+        accuracy, precision, recall, f1, mcc, roc_auc,fpr = an.analize_model_logostic_regression(X_train_scaled, X_test_scaled, y_train, y_test)
+        feature_selection_results.append(["Logistic Regression",x, threshold if x != "select_k_best" else k, X_train_selected.shape[1], accuracy, precision, recall, f1, mcc, roc_auc,fpr])
       
     for result in feature_selection_results:
         print(result)
+    """
+    print("before fs{0}", X_train_encoded.shape)
+    #lest assume that the fs is good for 0.01 with random forest
+    X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
+            X_train_encoded,
+            X_test_encoded,
+            y_train,
+            method="mutual_info",
+            threshold= 0.015,
+            k=k
+     )
+    print("after fs{0}", X_train_selected.shape)
 
-
-
+    best_model,best_parameter,best_cv_score = tune_random_forest(X_train_selected,y_train) 
+    print("best model{0}, best param{1} best score {2}",best_model,best_parameter,best_cv_score)
+    
     
     """
     print("X train before feature selection shape:", X_train_encoded.shape)

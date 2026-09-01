@@ -107,11 +107,19 @@ def calculate_metrics(
         y_pred_proba
     )
 
+    tn, fp, fn, tp = confusion_matrix(
+    y_test,
+    y_pred
+    ).ravel()
+
+    fpr = fp / (fp + tn)
+
     return (
         accuracy,
         precision,
         recall,
         f1,
         mcc,
-        roc_auc
+        roc_auc,
+        fpr
     )        

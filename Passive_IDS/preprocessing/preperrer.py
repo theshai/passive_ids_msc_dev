@@ -1,4 +1,4 @@
-from dataset_config_info import DATASET_CONFIG
+from preprocessing.dataset_config_info import DATASET_CONFIG
 
 def prepare_xy(df,dataset_name):
     """

@@ -1,5 +1,5 @@
 import sklearn as sk
-from dataset_config_info import DATASET_CONFIG
+from preprocessing.dataset_config_info import DATASET_CONFIG
 
 def split_dataset(X, y, dataset_name, test_size=0.2, random_state=42):
     """

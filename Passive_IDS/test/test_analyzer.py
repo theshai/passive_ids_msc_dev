@@ -29,9 +29,9 @@ def test_analize_model_random_forest():
 
     metrics = analize_model_random_forest(X_train, X_test, y_train, y_test)
     assert isinstance(metrics, tuple)
-    assert len(metrics) == 6  # Ensure that all metrics are returned
+    assert len(metrics) == 7  # Ensure that all metrics are returned
     #Get specific metrics
-    accuracy, precision, recall, f1, mcc, roc_auc = metrics
+    accuracy, precision, recall, f1, mcc, roc_auc,fpr = metrics
     assert 0.0 <= accuracy <= 1.0
     assert 0.0 <= precision <= 1.0
     assert 0.0 <= recall <= 1.0
@@ -49,9 +49,9 @@ def test_analize_model_xgboost():
 
     metrics = analize_model_xgboost(X_train, X_test, y_train, y_test)
     assert isinstance(metrics, tuple)
-    assert len(metrics) == 6  # Ensure that all metrics are returned
+    assert len(metrics) == 7  # Ensure that all metrics are returned
     #Get specific metrics
-    accuracy, precision, recall, f1, mcc, roc_auc = metrics
+    accuracy, precision, recall, f1, mcc, roc_auc,fpr = metrics
     assert 0.0 <= accuracy <= 1.0
     assert 0.0 <= precision <= 1.0
     assert 0.0 <= recall <= 1.0
@@ -69,9 +69,9 @@ def test_analize_model_logistic_regression():
 
     metrics = analize_model_logostic_regression(X_train, X_test, y_train, y_test)
     assert isinstance(metrics, tuple)
-    assert len(metrics) == 6  # Ensure that all metrics are returned
+    assert len(metrics) == 7  # Ensure that all metrics are returned
     #Get specific metrics
-    accuracy, precision, recall, f1, mcc, roc_auc = metrics
+    accuracy, precision, recall, f1, mcc, roc_auc,fpr = metrics
     assert 0.0 <= accuracy <= 1.0
     assert 0.0 <= precision <= 1.0
     assert 0.0 <= recall <= 1.0

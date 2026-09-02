@@ -21,8 +21,8 @@ from xgboost import XGBClassifier
 import preprocessing.featureselector as fs
 import preprocessing.analyzer as an
 from models.hyperparameter_tuner import tune_random_forest
-
-
+from sklearn.ensemble import RandomForestClassifier
+import joblib
 
 """generic function to analyze a dataset, given the file path, 
    ataset name, label column, and optional columns to load. 
@@ -211,6 +211,8 @@ def main() -> None:
     for result in feature_selection_results:
         print(result)
     """
+
+    """
     print("before fs{0}", X_train_encoded.shape)
     #lest assume that the fs is good for 0.01 with random forest
     X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
@@ -225,7 +227,52 @@ def main() -> None:
 
     best_model,best_parameter,best_cv_score = tune_random_forest(X_train_selected,y_train) 
     print("best model{0}, best param{1} best score {2}",best_model,best_parameter,best_cv_score)
+    """
+    #best fs is mutual_info with threshold 0.015, and best model is random forest with parameters: max_depth=30, max_features=None, min_samples_leaf=4, n_estimators=500, n_jobs=1, random_state=42
+    X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
+            X_train_encoded,
+            X_test_encoded,
+            y_train,
+            method="mutual_info",
+            threshold= 0.015,
+            k=20
+     )
+
+    #now we try on test with the best model, and evaluate the performance of the model using various metrics. The predicted labels will be compared with the true labels to calculate accuracy, precision, recall, F1 score, Matthews correlation coefficient, and ROC-AUC score. The confusion matrix and classification report will also be printed to provide a detailed analysis of the model's performance.
+    best_model = RandomForestClassifier(
+    n_estimators=500,
+    max_depth=30,
+    min_samples_split=2,
+    min_samples_leaf=4,
+    max_features=None,
+    class_weight=None,
+    n_jobs=1,
+    random_state=42
+    )
+
+    best_model.fit(
+    X_train_selected,
+    y_train
+    )
     
+    y_pred = best_model.predict(X_test_selected)
+
+    y_pred_proba = best_model.predict_proba(
+        X_test_selected
+    )[:, 1]
+
+    metrics = an.calculate_metrics(
+        y_test,
+        y_pred,
+        y_pred_proba
+    )
+
+    print(metrics)
+
+    joblib.dump(
+     best_model,
+    "models/random_forest_model.joblib"
+    )  
     
     """
     print("X train before feature selection shape:", X_train_encoded.shape)

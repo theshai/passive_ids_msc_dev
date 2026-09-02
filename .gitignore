@@ -1,1 +1,7 @@
 **/datasets/
+
+# Trained model files
+**/models/*.pkl
+**/models/*.joblib
+**/models/*.sav
+**/models/*.model

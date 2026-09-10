@@ -24,53 +24,18 @@ from models.hyperparameter_tuner import tune_random_forest
 from sklearn.ensemble import RandomForestClassifier
 import joblib
 
-"""generic function to analyze a dataset, given the file path, 
-   ataset name, label column, and optional columns to load. 
-   The function will load the dataset using the loader module,
-   and then inspect the dataset using the inspector module. 
-   The function will return the loaded DataFrame and the inspection report."""
+"""
+This file is an experiment file  that compare full pipline result vs live sensor selected result
+trying to prove that we get a good tradeoff from hand picking the features that are easy to produce
+on live data
 
-def analyze_dataset_moved(
-    file_path: str,
-    dataset_name: str,
-    label_column: str,
-    columns: list[str] | None = None
-):
-    df = ld.function_load_dataset_with_header(
-        file_path=file_path,
-        header=0,
-        sep=","
-    )
+main assumption for the test we have the fs and hyperparameter results for model, we will run both full dataset 
+and live(sensor) features through hot encoder and see if we get acceptable results.
 
-    report = insp.inspect_dataset(
-        df=df,
-        label_column=label_column
-    )
+I am not going to use a real pipeline because I have the values - saves some time.
 
-    return df, report
+"""
 
-def print_report_moved(report: dict) -> None:
-    print("\nDataset report")
-    print("-" * 50)
-
-    print("Rows:", report["rows"])
-    print("Columns:", report["columns"])
-    print("Missing values:", report["missing_values"])
-    print("Infinite values:", report["infinite_values"])
-    print("Duplicate rows:", report["duplicate_rows"])
-
-    print("\nCategorical columns:")
-    print(report["categorical_columns"])
-
-    print("\nLabel counts:")
-    for label, count in report["label_counts"].items():
-        print(f"{label}: {count}")
-
-    print("\nLabel percentages:")
-    for label, percentage in report["label_percentages"].items():
-        print(f"{label}: {percentage}%")
-
-"need to dynamic dataset path, so that we can use different datasets for testing and training. The dataset path should be passed as a command line argument, and the default value should be the path to the UNSW-NB15 dataset."
 def main() -> None:
 
     """load and analyze the UNSW-NB15
@@ -89,14 +54,11 @@ def main() -> None:
     )
 
     an.print_report(report)
-
+    
+    #get clean X and y (and binary 0/1)
     X,y = prep.prepare_xy(df,dataset_name)
 
-    #print("\nFeatures (X):")
-    #print(X.head())  
-
-    
-
+    #break data to train 80% and test 20%
     X_train, X_test, y_train, y_test = splt.split_dataset(
         X,
         y,
@@ -104,19 +66,32 @@ def main() -> None:
         test_size=0.2,
         random_state=42
     )
-    
-    #encoding the categorical features using one-hot encoding, and scaling the features using standard scaling. The encoded and scaled features will be used to train a logistic regression model, and the model will be evaluated using various metrics.
+
+    #testing columns before drop and encode
+    print("\nshape of X_train",X_train.shape)
+
+
+    #----------------------------------------------------------
+    #encoding the categorical features using one-hot encoding,
+    #also removing catergorical columns
+    #----------------------------------------------------------
     encoder = enc.create_encoder(X,dataset_name)
 
     X_train_encoded = encoder.fit_transform(X_train)
     X_test_encoded = encoder.transform(X_test) 
 
-    #print("after encoding orig:",X_train_encoded.shape)
+    print("\nshape of X_train_encoded",X_train_encoded.shape)
+    #print(encoder.get_feature_names_out().tolist())
 
-    
+    #---------------------------------------------------------
+    #Feature selection code, gets the best fs for the dataset
+    #---------------------------------------------------------
 
-    #experimanting with different feature selection methods and thresholds, and analyzing the results using the generic analyzing function. The feature selection methods include variance thresholding, correlation thresholding, mutual information, and select k best. The thresholds for each method can be adjusted to see how they affect the model performance.
-    
+    #first the options...
+    #experimanting with different feature selection methods and thresholds, and analyzing the results using the generic 
+    #analyzing function. The feature selection methods include variance thresholding, correlation thresholding, 
+    #mutual information, and select k best. The thresholds for each method can be adjusted to see how they affect the model performance.
+    """
     feature_selection_results = []
     feature_selection_results.append(["testing-model","method","parameters","features","accuracy","precision","recall","f1","mcc","roc_auc","fpr"])
     feature_selection_methods = [
@@ -170,8 +145,8 @@ def main() -> None:
             "k": k
         })
 
-    #this part to get the best fs ....after you find it, dont call again unless you have a new model or a new ds
-    """
+     #this part to get the best fs ....after you find it, dont call again unless you have a new model or a new ds
+    
     for method_config in feature_selection_methods:
         x = method_config["method"]
         threshold = method_config.get("threshold", 0.0)
@@ -211,9 +186,11 @@ def main() -> None:
     for result in feature_selection_results:
         print(result)
     """
-
-  
-    print("before fs{0}", X_train_encoded.shape)
+    #------------------------------------------------------------------
+    #Already find the best fs, dont run the top part takes forever....
+    #------------------------------------------------------------------
+    """
+    print(f"regular pipe encoded before fs{X_train_encoded.shape}")
     #lest assume that the fs is good for 0.01 with random forest
     X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
             X_train_encoded,
@@ -221,28 +198,28 @@ def main() -> None:
             y_train,
             method="mutual_info",
             threshold= 0.015,
-            k=k
+            k=20 #any number, mutul info need not k)
      )
-    print("after fs{0}", X_train_selected.shape)
-    
+    print(f"regular pipe encoded after fs{X_train_selected.shape}")
+    """
+    #---------------------------------------------------------
+    #now hyper pramaetr on random forest, trying to find best 
+    #parameters for that specific model
+    #---------------------------------------------------------
     """
     best_model,best_parameter,best_cv_score = tune_random_forest(X_train_selected,y_train) 
     print("best model{0}, best param{1} best score {2}",best_model,best_parameter,best_cv_score)
-    """
-    """
-    #best fs is mutual_info with threshold 0.015, and best model is random forest with parameters: max_depth=30, max_features=None, min_samples_leaf=4, n_estimators=500, n_jobs=1, random_state=42
-    X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
-            X_train_encoded,
-            X_test_encoded,
-            y_train,
-            method="mutual_info",
-            threshold= 0.015,
-            k=20
-     )
+  
+    #----------------------------------------------------------------------------------------------------
+    #now we try on test with the best model, and evaluate the performance of
+    #the model using various metrics. The predicted labels will be compared with the true labels
+    #to calculate accuracy, precision, recall, F1 score, Matthews correlation coefficient,
+    #and ROC-AUC score. The confusion matrix and classification report will also be printed to provide a
+    #detailed analysis of the model's performance.
+    #-----------------------------------------------------------------------------------------------------
+    
+    #thevalues below are the ones I got from the code above, to save some time I use the values 
 
-    print("selected colomns:", selected_columns)
-
-    #now we try on test with the best model, and evaluate the performance of the model using various metrics. The predicted labels will be compared with the true labels to calculate accuracy, precision, recall, F1 score, Matthews correlation coefficient, and ROC-AUC score. The confusion matrix and classification report will also be printed to provide a detailed analysis of the model's performance.
     best_model = RandomForestClassifier(
     n_estimators=500,
     max_depth=30,
@@ -275,6 +252,7 @@ def main() -> None:
     """
     # now try withthe list of the sensor
     print("trying with sensor list")
+    #use the list as base all fileds before fs
 
     live_features = [
     "proto",
@@ -325,7 +303,7 @@ def main() -> None:
     "service",
     "state"
     ]
-
+   
     encoder_live = sk.compose.ColumnTransformer(
     transformers=[
         (
@@ -338,13 +316,26 @@ def main() -> None:
         )
     ],
     remainder="passthrough"
-)
+    )
     
-
+    encoder_live.set_output(transform="pandas")
+    
     X_train_live_encoded = encoder_live.fit_transform(X_train_live)
     X_test_live_encoded = encoder_live.transform(X_test_live)
 
     print("after encoding live:",X_train_live_encoded.shape)
+    
+    #use same fs....it is only a subset not a new dataset
+    X_train_live_selected, X_test_live_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
+            X_train_live_encoded,
+            X_test_live_encoded,
+            y_train_live,
+            method="mutual_info",
+            threshold=0.015,
+            k=20
+        )
+
+    print(f"live pipe encoded selected after fs{X_train_live_selected.shape}")
 
     live_model = RandomForestClassifier(
     n_estimators=500,
@@ -358,16 +349,16 @@ def main() -> None:
 )
 
     live_model.fit(
-        X_train_live_encoded,
+        X_train_live_selected,
         y_train_live
     )
 
     y_pred_live = live_model.predict(
-        X_test_live_encoded
+        X_test_live_selected
     )
 
     y_pred_proba_live = live_model.predict_proba(
-        X_test_live_encoded
+        X_test_live_selected
     )[:, 1]
 
     live_metrics = an.calculate_metrics(
@@ -378,69 +369,9 @@ def main() -> None:
 
     print("Live-compatible model metrics:")
     print(live_metrics)
-    """
-    joblib.dump(
-     best_model,
-    "models/random_forest_model.joblib"
-    )  
-    
-    """
-    """
-    print("X train before feature selection shape:", X_train_encoded.shape)
 
-    # Apply feature selection -select the method you want
-    X_train_selected, X_test_selected, selected_columns, removed_columns, method = fs.apply_feature_selection(
-        X_train_encoded,
-        X_test_encoded,
-        y_train,
-        method="select_k_best",  # Options: "none", "variance", "correlation", "mutual_info", "select_k_best"
-        threshold=0.01
-    )
 
-    print("X train after feature selection shape:", X_train_selected.shape)
 
-    
-    print("trying scaled training the model.....")
-    scaler = sc.create_scaler(X_train_selected,dataset_name)
 
-    X_train_scaled = scaler.fit_transform(X_train_selected)
-    X_test_scaled = scaler.transform(X_test_selected)  
-
-    # calling generic analyzing function
-    an.analize_model(X_train_scaled, X_test_scaled, y_train, y_test)
-   
-
-    
-    
-    # first try with the selected features, and then train a new logistic regression model using the selected features. The new model will be evaluated using the same metrics as before.
-    lr_model = sk.linear_model.LogisticRegression(max_iter=2000,random_state=42)
-    lr_model.fit(X_train_selected, y_train)
-    print("Logistic Regression model trained.....")
-
-    y_pred = lr_model.predict(X_test_selected)
-    # for roc-auc, we need the predicted probabilities for the positive class
-    y_pred_proba = lr_model.predict_proba(X_test_selected)[:, 1]
-
-    # Calculate metrics
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred)
-    recall = recall_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
-    mcc = matthews_corrcoef(y_test, y_pred)
-    roc_auc = roc_auc_score(y_test, y_pred_proba)
-
-    print("Accuracy:", accuracy)
-    print("Precision:", precision)
-    print("Recall:", recall)
-    print("F1 Score:", f1)
-    print("Matthews Correlation Coefficient:", mcc)
-    print("ROC-AUC:", roc_auc)
-
-    print("\nConfusion Matrix")
-    print(confusion_matrix(y_test, y_pred))
-
-    print("\nClassification Report")
-    print(classification_report(y_test, y_pred))
-    """
 if __name__ == "__main__":
     main()

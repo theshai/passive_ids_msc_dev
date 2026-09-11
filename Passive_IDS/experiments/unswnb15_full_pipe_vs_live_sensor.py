@@ -370,6 +370,26 @@ def main() -> None:
     print("Live-compatible model metrics:")
     print(live_metrics)
 
+    #------------------------------------------------------------------------
+    #save all artifacts to be used later on raw data for predicition
+    #------------------------------------------------------------------------
+
+    joblib.dump(
+     live_model,
+    "models/random_forest_model_for_unswnb15.joblib"
+    ) 
+
+    joblib.dump(
+     encoder_live,
+    "models/live_encoder_for_unsenb15.joblib"
+    ) 
+
+    print("selected columns:",selected_columns)
+    joblib.dump(
+     selected_columns,
+    "models/live_selected_columns_for_unsenb15.joblib"
+    )  
+
 
 
 

@@ -264,8 +264,8 @@ def main() -> None:
     "sbytes",
     "dbytes",
     "rate",
-    "sttl",
-    "dttl",
+    #"sttl", causing the model to depend on one feature only
+    #"dttl", causing the model to depend on one feature only
     "sload",
     "dload",
     "sloss",
@@ -274,8 +274,8 @@ def main() -> None:
     "dinpkt",
     "sjit",
     "djit",
-    "swin",
-    "dwin",
+    #"swin", for experimenting
+    #"dwin", for experimenting
     "stcpb",
     "dtcpb",
     "tcprtt",
@@ -376,18 +376,18 @@ def main() -> None:
 
     joblib.dump(
      live_model,
-    "models/random_forest_model_for_unswnb15.joblib"
+    "models/random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl.joblib"
     ) 
 
     joblib.dump(
      encoder_live,
-    "models/live_encoder_for_unsenb15.joblib"
+    "models/live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
     ) 
 
     print("selected columns:",selected_columns)
     joblib.dump(
      selected_columns,
-    "models/live_selected_columns_for_unsenb15.joblib"
+    "models/live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
     )  
 
 

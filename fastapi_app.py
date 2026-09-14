@@ -9,9 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent
 app = FastAPI()
 
 #loading saved trained models
-encoder_path = BASE_DIR / "Passive_IDS" / "models" / "live_encoder_for_unsenb15.joblib"
-model_path = BASE_DIR / "Passive_IDS" / "models" / "random_forest_model_for_unswnb15.joblib"
-columns_path = BASE_DIR / "Passive_IDS" / "models" / "live_selected_columns_for_unsenb15.joblib"
+encoder_path = BASE_DIR / "Passive_IDS" / "models" / "live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
+model_path = BASE_DIR / "Passive_IDS" / "models" / "random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl.joblib"
+columns_path = BASE_DIR / "Passive_IDS" / "models" / "live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
 
 encoder = joblib.load(encoder_path)
 model = joblib.load(model_path)

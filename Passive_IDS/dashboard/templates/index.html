@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Passive IDS Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <div>
+            <h1>Passive IDS</h1>
+            <p>Network Intrusion Detection Dashboard</p>
+        </div>
+
+        <div id="statusBadge" class="status stopped">
+            ! Stopped
+        </div>
+    </header>
+
+
+    <div class="control-panel">
+
+        <div class="control">
+            <label>Model</label>
+
+            <select id="modelSelect">
+                <option value="random_forest">
+                    Random Forest
+                </option>
+
+                <option value="xgboost">
+                    XGBoost
+                </option>
+
+                <option value="logistic_regression">
+                    Logistic Regression
+                </option>
+            </select>
+        </div>
+
+
+        <div class="buttons">
+
+            <button
+                id="startButton"
+                class="start"
+                onclick="startCapture()">
+
+                Start Capture
+
+            </button>
+
+            <button
+                id="stopButton"
+                class="stop-button"
+                onclick="stopCapture()">
+
+                Stop Capture
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="metrics">
+
+        <div class="metric-card">
+            <span>Accuracy</span>
+            <strong id="accuracy">--</strong>
+        </div>
+
+        <div class="metric-card">
+            <span>Recall</span>
+            <strong id="recall">--</strong>
+        </div>
+
+        <div class="metric-card">
+            <span>F1 Score</span>
+            <strong id="f1">--</strong>
+        </div>
+
+        <div class="metric-card">
+            <span>False Positive Rate</span>
+            <strong id="fpr">--</strong>
+        </div>
+
+    </div>
+
+
+    <section class="traffic-section">
+
+        <div class="section-title">
+
+            <h2>Live Network Traffic</h2>
+
+            <span id="flowCount">
+                0 flows
+            </span>
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Protocol</th>
+                    <th>Service</th>
+                    <th>State</th>
+                    <th>Packets</th>
+                    <th>Bytes</th>
+                    <th>Prediction</th>
+                    <th>Attack Probability</th>
+                </tr>
+                </thead>
+
+                <tbody id="trafficTable">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+</div>
+
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+</body>
+
+</html>

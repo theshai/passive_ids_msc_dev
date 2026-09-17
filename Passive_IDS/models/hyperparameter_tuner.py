@@ -22,11 +22,12 @@ def tune_random_forest(X_train,y_train):
     search = RandomizedSearchCV(
         estimator=model,
         param_distributions=parameters,
-        n_iter=30,
+        n_iter=20,
         scoring="f1",
-        cv=5,
+        cv=3,
         random_state=42,
-        n_jobs=4,
+        n_jobs=2, #parallel fit
+        pre_dispatch=2, # prepare 2 jobs at a time
         verbose=2
     )
 

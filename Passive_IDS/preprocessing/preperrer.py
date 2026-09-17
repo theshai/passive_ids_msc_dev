@@ -12,7 +12,7 @@ def prepare_xy(df,dataset_name):
         tuple: A tuple containing the features (X) and labels (y).
     """
     config = DATASET_CONFIG[dataset_name]
-    label_column = config["label_column"]
+    label_column = config["label_column"].strip() # at this point all spaces removed 
 
     # Separate features (X) and labels (y)
     X = df.drop(columns=[label_column]).copy()  # Features

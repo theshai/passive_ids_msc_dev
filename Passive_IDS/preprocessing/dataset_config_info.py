@@ -30,6 +30,7 @@ DATASET_CONFIG={
         "normal_labels": ["BENIGN"],
     },
     "cic2017": {
+    "file_path":"datasets/Processed/CIC-2017-MERGED/cic_2017.csv",    
     "file_paths": [
         "datasets/RAW/CIC-IDS2017/Monday-WorkingHours.pcap_ISCX.csv",
         "datasets/RAW/CIC-IDS2017/Tuesday-WorkingHours.pcap_ISCX.csv",
@@ -41,10 +42,12 @@ DATASET_CONFIG={
         "datasets/RAW/CIC-IDS2017/Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv"
     ],
 
-    "label_column": " Label", # " Label" but we do strip
+    "label_column": "Label", # " Label" but we do strip
     "columns": None,
     "categorical_columns": [],
-    "drop_columns": [],
+    "drop_columns": [
+    "source_file"
+    ],
     "target_type": "binary",
     "target_already_numeric": False,
     "normal_labels": ["BENIGN"],

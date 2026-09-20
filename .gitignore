@@ -4,4 +4,4 @@
 **/models/*.pkl
 **/models/*.joblib
 **/models/*.sav
-**/models/*.model
+**/models/*.modelPassive_IDS/models/**/*.joblib

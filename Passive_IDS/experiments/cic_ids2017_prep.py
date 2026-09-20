@@ -551,15 +551,15 @@ def main() -> None:
 
     print(f"Live pipe encoded selected after FS: {X_train_selected.shape}")
     print(f"Selected columns: {selected_columns}")
+    #now save the selected features....
 
-    """
     print("Saving selected columns as joblib")
 
     joblib.dump(
     selected_columns,
-    "models/cic2017_correlation_090_selected_columns.joblib"
+    "models/cic2017/cic2017_correlation_090_selected_46_columns.joblib"
     )
-    """
+    
 
     """
     #---------------------------------------------------------
@@ -590,7 +590,7 @@ def main() -> None:
     # but not the same, so we will use both of them on the full 2mil lines and compare results
     #for this version i am using RandomForestClassifier, might add another one later
     #-------------------------------------------------------------------------------------------------
-    
+    """
     rf_200k = RandomForestClassifier(
         n_estimators=200,
         min_samples_split=5,
@@ -626,7 +626,7 @@ def main() -> None:
 
     print("\nRF parameters selected using 200k tuning:")
     print(metrics_200k)
-
+    """
     rf_500k = RandomForestClassifier(
         n_estimators=500,
         min_samples_split=5,
@@ -659,6 +659,12 @@ def main() -> None:
 
     print("\nRF parameters selected using 500k tuning:")
     print(metrics_500k)
+
+    #now save the model.....
+    joblib.dump(
+    rf_500k,
+    "models/cic2017/cic2017_random_forest_46_columns.joblib"
+    )
 
        
          

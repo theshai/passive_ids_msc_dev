@@ -68,7 +68,7 @@ async function loadStatus() {
                 data.metrics?.fpr
             );
 
-
+        /*
         if (data.model) {
 
             document.getElementById(
@@ -96,7 +96,7 @@ async function loadStatus() {
                 data.protocol;
 
         }
-
+        */
 
     }
     catch (error) {

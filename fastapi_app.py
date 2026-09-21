@@ -12,6 +12,21 @@ BASE_DIR = Path(__file__).resolve().parent
 
 recent_predictions = deque(maxlen=100)
 
+#ini for dashboard load
+capture_config={
+    "running":False,
+    "dataset":"cic2017",
+    "model":"random_forest",
+    "protocol":"all"
+}
+
+model_metrics = {
+    "accuracy": 0.9499558014200576,
+    "recall": 0.9728518161632242,
+    "f1": 0.9635869452455547,
+    "fpr": 0.09883928571428571
+}
+
 app = FastAPI()
 
 #----------------------------------------------------------------------------
@@ -31,25 +46,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-capture_running = True
+##capture_running = True
 
-selected_model = "random_forest"
+##selected_model = "random_forest"
 
-recent_predictions = deque(
-    maxlen=100
-)
+##recent_predictions = deque(
+##    maxlen=100
+##)
 
-
-model_metrics = {
-    "accuracy": 0.9499558014200576,
-    "recall": 0.9728518161632242,
-    "f1": 0.9635869452455547,
-    "fpr": 0.09883928571428571
-}
-
-
+"""
 class ModelRequest(BaseModel):
     model: str
+"""
+
+# accepting cic2017,random_forest,tcp 
+class CaptureRequest(BaseModel):
+    dataset: str
+    model: str
+    protocol: str
 
 
 @app.get("/status")
@@ -57,38 +71,62 @@ def get_status():
 
     return {
         "capture_running":
-            capture_running,
+            capture_config["running"],
+
+        "dataset":
+            capture_config["dataset"],    
 
         "model":
-            selected_model,
+            capture_config["model"], 
+
+        "protocol":
+            capture_config["protocol"], 
 
         "metrics":
             model_metrics
     }
 
 @app.post("/capture/start")
-def start_capture():
+def start_capture(request:CaptureRequest):
 
-    global capture_running
+    ##global capture_running
 
-    capture_running = True
+    capture_config["running"] = True
+
+    capture_config["dataset"] = (request.dataset)
+
+    capture_config["model"] = (request.model)
+
+    capture_config["protocol"] = (request.protocol)
+
+    print("Capture configuration:",capture_config)
 
     return {
-        "status": "started"
+        "status": "started",
+        "config":capture_config
     }
 
 
 @app.post("/capture/stop")
 def stop_capture():
 
-    global capture_running
+    ##global capture_running
 
-    capture_running = False
+    capture_config["running"] = False
+
+    print("Capture stopped")
 
     return {
-        "status": "stopped"
+        "status": "stopped",
+        "config":capture_config
     }
 
+#entry point for the sensor to recive requested mode
+@app.get("/capture/config")
+def get_capture_config():
+    return capture_config
+
+"""
 @app.post("/model")
 def change_model(
     request: ModelRequest
@@ -108,6 +146,7 @@ def change_model(
             selected_model
     }
 
+"""
 
 @app.get("/predictions")
 def get_predictions():

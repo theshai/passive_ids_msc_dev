@@ -30,48 +30,95 @@
 
     <div class="control-panel">
 
-        <div class="control">
-            <label>Model</label>
+    <!-- Dataset -->
+    <div class="control">
+        <label>Dataset</label>
 
-            <select id="modelSelect">
-                <option value="random_forest">
-                    Random Forest
-                </option>
+        <select id="datasetSelect">
 
-                <option value="xgboost">
-                    XGBoost
-                </option>
+            <option value="unsw">
+                UNSW-NB15
+            </option>
 
-                <option value="logistic_regression">
-                    Logistic Regression
-                </option>
-            </select>
-        </div>
+            <option value="cic2017">
+                CIC-IDS2017
+            </option>
+
+        </select>
+    </div>
 
 
-        <div class="buttons">
+    <!-- Model -->
+    <div class="control">
+        <label>Model</label>
 
-            <button
-                id="startButton"
-                class="start"
-                onclick="startCapture()">
+        <select id="modelSelect">
 
-                Start Capture
+            <option value="random_forest">
+                Random Forest
+            </option>
 
-            </button>
+            <option value="xgboost">
+                XGBoost
+            </option>
 
-            <button
-                id="stopButton"
-                class="stop-button"
-                onclick="stopCapture()">
+            <option value="logistic_regression">
+                Logistic Regression
+            </option>
 
-                Stop Capture
+        </select>
+    </div>
 
-            </button>
 
-        </div>
+    <!-- Protocol -->
+    <div class="control">
+        <label>Protocol</label>
+
+        <select id="protocolSelect">
+
+            <option value="all">
+                All
+            </option>
+
+            <option value="tcp">
+                TCP
+            </option>
+
+            <option value="udp">
+                UDP
+            </option>
+
+            <option value="icmp">
+                ICMP
+            </option>
+
+        </select>
+    </div>
+
+
+    <div class="buttons">
+
+        <button
+            id="startButton"
+            class="start"
+            onclick="startCapture()">
+
+            Start Capture
+
+        </button>
+
+        <button
+            id="stopButton"
+            class="stop-button"
+            onclick="stopCapture()">
+
+            Stop Capture
+
+        </button>
 
     </div>
+
+</div>
 
 
     <div class="metrics">

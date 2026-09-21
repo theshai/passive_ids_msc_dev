@@ -374,6 +374,9 @@ def predict_cic2017(payload: dict):
         "dst_port": metadata.get("dst_port", ""),
 
         "protocol": str(metadata.get("protocol", "")),
+        #added manually, not included in the 46 features selected
+        "service": str(metadata.get("service", "")),
+        "state": str(metadata.get("state", "")),
 
         "packets": float(
             metadata.get("packets") or 0

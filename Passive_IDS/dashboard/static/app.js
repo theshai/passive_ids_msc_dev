@@ -78,6 +78,26 @@ async function loadStatus() {
 
         }
 
+        if (data.dataset) {
+
+            document.getElementById(
+                "datasetSelect"
+            ).value =
+                data.dataset;
+
+        }
+
+
+        if (data.protocol) {
+
+            document.getElementById(
+                "protocolSelect"
+            ).value =
+                data.protocol;
+
+        }
+
+
     }
     catch (error) {
 
@@ -183,57 +203,144 @@ async function loadPredictions() {
 
 async function startCapture() {
 
-    await fetch(
-        `${API}/capture/start`,
-        {
-            method: "POST"
-        }
-    );
-
-    loadStatus();
-
-}
-
-
-async function stopCapture() {
-
-    await fetch(
-        `${API}/capture/stop`,
-        {
-            method: "POST"
-        }
-    );
-
-    loadStatus();
-
-}
-
-
-async function changeModel() {
+    const dataset =
+        document.getElementById(
+            "datasetSelect"
+        ).value;
 
     const model =
         document.getElementById(
             "modelSelect"
         ).value;
 
+    const protocol =
+        document.getElementById(
+            "protocolSelect"
+        ).value;
 
-    await fetch(
-        `${API}/model`,
-        {
-            method: "POST",
 
-            headers: {
-                "Content-Type":
-                    "application/json"
-            },
+    const config = {
+        dataset: dataset,
+        model: model,
+        protocol: protocol
+    };
 
-            body: JSON.stringify({
-                model: model
-            })
-        }
+
+    console.log(
+        "Starting capture with configuration:",
+        config
     );
 
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/capture/start`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(config)
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const error =
+                await response.text();
+
+            console.error(
+                "Unable to start capture:",
+                error
+            );
+
+            return;
+        }
+
+
+        const result =
+            await response.json();
+
+        console.log(
+            "Capture configuration accepted:",
+            result
+        );
+
+
+        loadStatus();
+
+    }
+    catch (error) {
+
+        console.error(
+            "Unable to start capture:",
+            error
+        );
+
+    }
+
 }
+
+
+async function stopCapture() {
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/capture/stop`,
+                {
+                    method: "POST"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const error =
+                await response.text();
+
+            console.error(
+                "Unable to stop capture:",
+                error
+            );
+
+            return;
+        }
+
+
+        const result =
+            await response.json();
+
+        console.log(
+            "Capture stopped:",
+            result
+        );
+
+
+        loadStatus();
+
+    }
+    catch (error) {
+
+        console.error(
+            "Unable to stop capture:",
+            error
+        );
+
+    }
+
+}
+
+
+
 
 
 function formatPercent(value) {
@@ -250,14 +357,6 @@ function formatPercent(value) {
 }
 
 
-document
-    .getElementById(
-        "modelSelect"
-    )
-    .addEventListener(
-        "change",
-        changeModel
-    );
 
 
 loadStatus();

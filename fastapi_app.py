@@ -322,6 +322,50 @@ def testing():
 #--------------------------------------------------------
 #load cic2017 model and columns
 #--------------------------------------------------------
+
+cic2017_rf_model_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "cic2017" /
+    "cic2017_random_forest_46_columns.joblib"
+)
+
+cic2017_xgb_model_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "cic2017" /
+    "cic2017_xgboost_46_columns.joblib"
+)
+
+# just the columns for both models
+cic2017_columns_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "cic2017" /
+    "cic2017_correlation_090_selected_46_columns.joblib"
+)
+
+
+cic2017_rf_model = joblib.load(
+    cic2017_rf_model_path
+)
+
+cic2017_xgb_model = joblib.load(
+    cic2017_xgb_model_path
+)
+
+cic2017_selected_columns = joblib.load(
+    cic2017_columns_path
+)
+
+
+print(
+    "CIC2017 Random Forest model loaded with",
+    len(cic2017_selected_columns),
+    "features"
+)
+
+print(
+    "CIC2017 XGBoost model loaded with",
+    len(cic2017_selected_columns),
+    "features"
+)
+
+"""
 cic2017_model_path = (
     BASE_DIR / "Passive_IDS" / "models" / "cic2017" /
     "cic2017_random_forest_46_columns.joblib"
@@ -343,8 +387,9 @@ print(
     len(cic2017_selected_columns),
     "features"
 )
+"""
 
-@app.post("/predict/cic2017")
+@app.post("/predict/cic2017_works")
 def predict_cic2017(payload: dict):
 
     # ------------------------------------------------------
@@ -453,4 +498,157 @@ def predict_cic2017(payload: dict):
 
         "attack_probability":
             float(probability)
+    }
+
+
+@app.post("/predict/cic2017")
+def predict_cic2017(payload: dict):
+
+    # ------------------------------------------------------
+    # Get features and metadata from request
+    # ------------------------------------------------------
+
+    features = payload.get("features", {})
+    metadata = payload.get("metadata", {})
+
+
+    # ------------------------------------------------------
+    # Make sure all 46 required features were received
+    # ------------------------------------------------------
+
+    missing = [
+        column
+        for column in cic2017_selected_columns
+        if column not in features
+    ]
+
+    if missing:
+        return {
+            "error": "Missing CIC-IDS2017 features",
+            "missing": missing
+        }
+
+
+    # ------------------------------------------------------
+    # Convert ONLY model features to DataFrame
+    # ------------------------------------------------------
+
+    df = pd.DataFrame([features])
+
+
+    # ------------------------------------------------------
+    # Force exact same columns/order used during training
+    # ------------------------------------------------------
+
+    selected = df[cic2017_selected_columns]
+
+
+    # ------------------------------------------------------
+    # Select model from dashboard configuration
+    # ------------------------------------------------------
+
+    selected_model = capture_config.get(
+        "model",
+        "random_forest"
+    ).lower()
+
+
+    if selected_model == "random_forest":
+
+        active_model = cic2017_rf_model
+
+    elif selected_model == "xgboost":
+
+        active_model = cic2017_xgb_model
+
+    else:
+
+        return {
+            "error": "Unsupported CIC-IDS2017 model",
+            "model": selected_model
+        }
+
+
+    # ------------------------------------------------------
+    # Prediction
+    # ------------------------------------------------------
+
+    prediction = active_model.predict(
+        selected
+    )[0]
+
+    probability = active_model.predict_proba(
+        selected
+    )[0][1]
+
+
+    # ------------------------------------------------------
+    # Dashboard data
+    # ------------------------------------------------------
+
+    result = {
+        "time": datetime.now().strftime("%H:%M:%S"),
+
+        "dataset": "CIC-IDS2017",
+
+        # Model that made this prediction
+        "model": selected_model,
+
+        "src_ip": str(metadata.get("src_ip", "")),
+        "src_port": metadata.get("src_port", ""),
+
+        "dst_ip": str(metadata.get("dst_ip", "")),
+        "dst_port": metadata.get("dst_port", ""),
+
+        "protocol": str(metadata.get("protocol", "")),
+
+        # Added manually, not included in the 46 features selected
+        "service": str(metadata.get("service", "")),
+        "state": str(metadata.get("state", "")),
+
+        "packets": float(
+            metadata.get("packets") or 0
+        ),
+
+        "bytes": float(
+            metadata.get("bytes") or 0
+        ),
+
+        "prediction":
+            "ATTACK" if prediction == 1 else "NORMAL",
+
+        "probability": float(probability)
+    }
+
+
+    recent_predictions.appendleft(result)
+
+    print("CIC2017 DASHBOARD:", result)
+
+    print(
+        "Model used:",
+        selected_model
+    )
+
+    print(
+        "Stored predictions:",
+        len(recent_predictions)
+    )
+
+
+    # ------------------------------------------------------
+    # Return prediction to Network Agent
+    # ------------------------------------------------------
+
+    return {
+        "prediction": int(prediction),
+
+        "label":
+            "ATTACK" if prediction == 1 else "NORMAL",
+
+        "attack_probability":
+            float(probability),
+
+        "model":
+            selected_model
     }

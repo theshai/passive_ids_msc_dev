@@ -193,7 +193,7 @@ def predict_unsw(flow: dict):
         "attack_probability": float(probability)
     }
 """
-
+"""
 @app.post("/predict/unsw_")
 def predict_unsw_(flow: dict):
 
@@ -267,6 +267,8 @@ def predict_unsw_(flow: dict):
         print("************************\n")
 
         raise
+"""
+
 
 @app.post("/predict/unsw")
 def predict_unsw(flow: dict):
@@ -313,6 +315,7 @@ def predict_unsw(flow: dict):
             "ATTACK" if prediction == 1 else "NORMAL",
         "attack_probability": float(probability)
     }
+
 
 
 @app.get("/test")

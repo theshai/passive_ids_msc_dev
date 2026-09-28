@@ -131,7 +131,7 @@ def calculate_metrics(
 def analyze_dataset(
         file_path: str,
         dataset_name: str,
-        label_column: str,
+        label_column: str  | None = None,
         columns: list[str] | None = None
     ):
         df = ld.function_load_dataset_with_header(
@@ -148,7 +148,73 @@ def analyze_dataset(
         return df, report 
 
     #report for basic analyzing
-def print_report(report: dict) -> None:
+def print_report(
+    report: dict
+) -> None:
+
+    print("\nDataset report")
+    print("-" * 50)
+
+    print(
+        "Rows:",
+        report["rows"]
+    )
+
+    print(
+        "Columns:",
+        report["columns"]
+    )
+
+    print(
+        "Missing values:",
+        report["missing_values"]
+    )
+
+    print(
+        "Infinite values:",
+        report["infinite_values"]
+    )
+
+    print(
+        "Duplicate rows:",
+        report["duplicate_rows"]
+    )
+
+    print("\nCategorical columns:")
+
+    print(
+        report["categorical_columns"]
+    )
+
+
+    # ------------------------------------------------------
+    # Only print label information if labels exist
+    # ------------------------------------------------------
+
+    if report.get("label_counts"):
+
+        print("\nLabel counts:")
+
+        for label, count in (
+            report["label_counts"].items()
+        ):
+
+            print(
+                f"{label}: {count}"
+            )
+
+
+        print("\nLabel percentages:")
+
+        for label, percentage in (
+            report["label_percentages"].items()
+        ):
+
+            print(
+                f"{label}: {percentage}%"
+            )
+
+def print_report_delete(report: dict) -> None:
         print("\nDataset report")
         print("-" * 50)
 

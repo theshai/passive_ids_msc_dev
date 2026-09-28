@@ -62,8 +62,8 @@
                 XGBoost
             </option>
 
-            <option value="logistic_regression" disabled>
-                Logistic Regression -NA
+            <option value="isolation_forest">
+                Isolation Forest
             </option>
 
         </select>
@@ -164,16 +164,17 @@
             <table>
 
                 <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Protocol</th>
-                    <th>Service</th>
-                    <th>State</th>
-                    <th>Packets</th>
-                    <th>Bytes</th>
-                    <th>Prediction</th>
-                    <th>Attack Probability</th>
-                </tr>
+                    <tr>
+                        <th>Time</th>
+                        <th>Model</th>
+                        <th>Protocol</th>
+                        <th>Service</th>
+                        <th>State</th>
+                        <th>Packets</th>
+                        <th>Bytes</th>
+                        <th>Prediction</th>
+                        <th>Score</th>
+                    </tr>
                 </thead>
 
                 <tbody id="trafficTable">

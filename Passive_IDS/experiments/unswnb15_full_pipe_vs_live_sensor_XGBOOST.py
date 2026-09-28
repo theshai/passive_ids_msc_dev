@@ -243,6 +243,8 @@ def main() -> None:
     #save all artifacts to be used later on raw data for predicition
     #------------------------------------------------------------------------
 
+    input("\n If you continue you are going to overwrite the tested files....")
+
     joblib.dump(
      live_model_xgb,
     "models/unswnb15/xgboost_live_unsw.joblib"

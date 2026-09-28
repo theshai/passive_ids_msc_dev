@@ -110,13 +110,13 @@ async function loadStatus() {
 
 }
 
-
+//supporting the unsupervised model also
 async function loadPredictions() {
 
     try {
 
         const response = await fetch(
-            "http://localhost:8000/predictions"
+            `${API}/predictions`
         );
 
         if (!response.ok) {
@@ -146,42 +146,150 @@ async function loadPredictions() {
             const tr =
                 document.createElement("tr");
 
+
+            // --------------------------------------------------
+            // Prediction class
+            //
+            // NORMAL  -> normal
+            // ATTACK  -> attack
+            // ANOMALY -> attack
+            // --------------------------------------------------
+
             const predictionClass =
                 row.prediction === "NORMAL"
                     ? "normal"
                     : "attack";
 
+
+            // --------------------------------------------------
+            // Score display
+            //
+            // Random Forest / XGBoost:
+            //      probability -> percentage
+            //
+            // Isolation Forest:
+            //      anomaly_score -> raw decision score
+            //
+            // Isolation Forest:
+            //      positive = more normal
+            //      negative = more anomalous
+            // --------------------------------------------------
+
+            let scoreDisplay = "";
+
+
+            if (
+                row.model === "isolation_forest"
+            ) {
+
+                if (
+                    row.anomaly_score !== null &&
+                    row.anomaly_score !== undefined
+                ) {
+
+                    scoreDisplay =
+                        row.anomaly_score.toFixed(4);
+
+                }
+
+            } else {
+
+                if (
+                    row.probability !== null &&
+                    row.probability !== undefined
+                ) {
+
+                    scoreDisplay =
+                        (
+                            row.probability * 100
+                        ).toFixed(1) + "%";
+
+                }
+
+            }
+
+
+            // --------------------------------------------------
+            // Model display name
+            // --------------------------------------------------
+
+            let modelDisplay =
+                row.model ?? "";
+
+
+            if (
+                row.model === "random_forest"
+            ) {
+
+                modelDisplay =
+                    "Random Forest";
+
+            } else if (
+                row.model === "xgboost"
+            ) {
+
+                modelDisplay =
+                    "XGBoost";
+
+            } else if (
+                row.model === "isolation_forest"
+            ) {
+
+                modelDisplay =
+                    "Isolation Forest";
+
+            }
+
+
+            // --------------------------------------------------
+            // Build table row
+            // --------------------------------------------------
+
             tr.innerHTML = `
 
-                <td>${row.time ?? ""}</td>
+                <td>
+                    ${row.time ?? ""}
+                </td>
 
-                <td>${row.protocol ?? ""}</td>
+                <td>
+                    ${modelDisplay}
+                </td>
 
-                <td>${row.service ?? ""}</td>
+                <td>
+                    ${row.protocol ?? ""}
+                </td>
 
-                <td>${row.state ?? ""}</td>
+                <td>
+                    ${row.service ?? ""}
+                </td>
 
-                <td>${row.packets ?? ""}</td>
+                <td>
+                    ${row.state ?? ""}
+                </td>
 
-                <td>${row.bytes ?? ""}</td>
+                <td>
+                    ${row.packets ?? ""}
+                </td>
+
+                <td>
+                    ${row.bytes ?? ""}
+                </td>
 
                 <td class="${predictionClass}">
                     ${row.prediction ?? ""}
                 </td>
 
                 <td>
-                    ${
-                        row.probability != null
-                            ? (
-                                row.probability * 100
-                              ).toFixed(1) + "%"
-                            : ""
-                    }
+                    ${scoreDisplay}
                 </td>
 
             `;
 
-            table.appendChild(tr);
+
+            table.appendChild(
+                tr
+            );
+
         });
 
 
@@ -197,7 +305,9 @@ async function loadPredictions() {
             "Unable to retrieve predictions:",
             error
         );
+
     }
+
 }
 
 
@@ -217,6 +327,19 @@ async function startCapture_() {
         document.getElementById(
             "protocolSelect"
         ).value;
+
+    //double check model and dataset combination
+    if (
+    model === "isolation_forest" &&
+    dataset !== "unsw"
+        ) {
+
+    alert(
+        "Isolation Forest is currently available only for the UNSW live feature set."
+    );
+
+    return;
+        }    
 
 
     const config = {
@@ -308,7 +431,8 @@ async function startCapture() {
     // --------------------------------------------------
     // Validate dataset/model combination
     // --------------------------------------------------
-
+    //now that we added the model xgboost to unsw we remove that
+    /*
     if (
         model === "xgboost" &&
         dataset !== "cic2017"
@@ -320,7 +444,7 @@ async function startCapture() {
 
         return;
     }
-
+    */
 
     const config = {
         dataset: dataset,

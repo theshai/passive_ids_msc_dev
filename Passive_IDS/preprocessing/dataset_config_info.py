@@ -53,5 +53,31 @@ DATASET_CONFIG={
     "normal_labels": ["BENIGN"],
 
     "add_source_file": True
-}     
+    },"unsw_nb15_live_normal": {
+
+        "file_path":
+            "datasets/RAW/UNSW-NB15-LIVE-COLLECTED/"
+            "unsw_live_normal_capture.csv",
+
+        # Unsupervised dataset - no target/label
+        "label_column": None,
+
+        "columns": None,
+
+        "categorical_columns": [
+            "proto",
+            "service",
+            "state"
+        ],
+
+        # capture_time was added for logging only
+        # and must not be used for ML
+        "drop_columns": [
+            "capture_time"
+        ],
+
+        "target_type": None,
+
+        "target_already_numeric": False,
+    }
 }

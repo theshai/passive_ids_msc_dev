@@ -162,7 +162,461 @@ def get_predictions():
 #End of gui part
 #----------------------------------------------------------------------------
 
-#loading saved trained models
+#--------------------------------------------------------------------------------------------------------------------
+#loading saved trained models for unsw
+#--------------------------------------------------------------------------------------------------------------------
+
+#staring with rf
+unsw_rf_encoder_path = (
+    BASE_DIR / "Passive_IDS" / "models" /
+    "live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
+)
+
+unsw_rf_model_path = (
+    BASE_DIR / "Passive_IDS" / "models" /
+    "random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl.joblib"
+)
+
+unsw_rf_columns_path = (
+    BASE_DIR / "Passive_IDS" / "models" /
+    "live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
+)
+
+unsw_rf_encoder = joblib.load(
+    unsw_rf_encoder_path
+)
+
+unsw_rf_model = joblib.load(
+    unsw_rf_model_path
+)
+
+unsw_rf_selected_columns = joblib.load(
+    unsw_rf_columns_path
+)
+
+#now xgboost
+unsw_xgb_model_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "xgboost_live_unsw.joblib"
+)
+
+unsw_xgb_encoder_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "xgboost_live_encoder_unsw.joblib"
+)
+
+unsw_xgb_columns_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "xgboost_live_selected_columns_unsw.joblib"
+)
+
+unsw_xgb_model = joblib.load(
+    unsw_xgb_model_path
+)
+
+unsw_xgb_encoder = joblib.load(
+    unsw_xgb_encoder_path
+)
+
+unsw_xgb_selected_columns = joblib.load(
+    unsw_xgb_columns_path
+)
+
+#just notification for future log
+print(
+    "UNSW Random Forest loaded with",
+    len(unsw_rf_selected_columns),
+    "features"
+)
+
+print(
+    "UNSW XGBoost loaded with",
+    len(unsw_xgb_selected_columns),
+    "features"
+)
+
+#----------------------------
+# isolation forest load
+#----------------------------
+
+# --------------------------------------------------------
+# Load Isolation Forest model + encoder
+# --------------------------------------------------------
+
+isolation_model_path = (
+    BASE_DIR /
+    "Passive_IDS" /
+    "models" /
+    "unswnb15_isolation_forest" /
+    "live_isolation_forest_v1.joblib"
+)
+
+isolation_encoder_path = (
+    BASE_DIR /
+    "Passive_IDS" /
+    "models" /
+    "unswnb15_isolation_forest" /
+    "live_isolation_encoder_v1.joblib"
+)
+
+isolation_model = joblib.load(
+    isolation_model_path
+)
+
+isolation_encoder = joblib.load(
+    isolation_encoder_path
+)
+
+print(
+    "Isolation Forest model loaded"
+)
+
+
+# --------------------------------------------------------
+# Add next model if needed, please use same structure
+# --------------------------------------------------------
+
+
+# --------------------------------------------------------
+# Updated version with Random Forest,
+# XGBoost and Isolation Forest
+# --------------------------------------------------------
+
+@app.post("/predict/unsw")
+def predict_unsw(flow: dict):
+
+    # ------------------------------------------------------
+    # Get selected model from dashboard configuration
+    # ------------------------------------------------------
+
+    selected_model = capture_config.get(
+        "model",
+        "random_forest"
+    ).lower()
+
+
+    # ------------------------------------------------------
+    # Select model + matching encoder + matching columns
+    # ------------------------------------------------------
+
+    if selected_model == "random_forest":
+
+        active_model = unsw_rf_model
+        active_encoder = unsw_rf_encoder
+        active_columns = unsw_rf_selected_columns
+
+        model_type = "supervised"
+
+
+    elif selected_model == "xgboost":
+
+        active_model = unsw_xgb_model
+        active_encoder = unsw_xgb_encoder
+        active_columns = unsw_xgb_selected_columns
+
+        model_type = "supervised"
+
+
+    elif selected_model == "isolation_forest":
+
+        active_model = isolation_model
+        active_encoder = isolation_encoder
+
+        # Isolation Forest was trained using
+        # all encoded fields
+        active_columns = None
+
+        model_type = "unsupervised"
+
+
+    else:
+
+        return {
+            "error": "Unsupported UNSW-NB15 model",
+            "model": selected_model
+        }
+
+
+    # ------------------------------------------------------
+    # Convert live flow to DataFrame
+    # ------------------------------------------------------
+
+    df = pd.DataFrame(
+        [flow]
+    )
+
+
+    # ------------------------------------------------------
+    # Encode using encoder belonging to selected model
+    # ------------------------------------------------------
+
+    encoded = active_encoder.transform(
+        df
+    )
+
+
+    # ------------------------------------------------------
+    # Select exact columns belonging to selected model
+    #
+    # RF / XGBoost:
+    #     use saved selected columns
+    #
+    # Isolation Forest:
+    #     use all encoded fields
+    # ------------------------------------------------------
+
+    if active_columns is not None:
+
+        selected = encoded[
+            active_columns
+        ]
+
+    else:
+
+        selected = encoded
+
+
+    # ------------------------------------------------------
+    # Prediction
+    # ------------------------------------------------------
+
+    prediction = active_model.predict(
+        selected
+    )[0]
+
+
+    # ------------------------------------------------------
+    # Supervised model prediction
+    #
+    # Random Forest / XGBoost
+    # ------------------------------------------------------
+
+    if model_type == "supervised":
+
+        probability = active_model.predict_proba(
+            selected
+        )[0][1]
+
+        prediction_label = (
+            "ATTACK"
+            if prediction == 1
+            else "NORMAL"
+        )
+
+        anomaly_score = None
+
+
+    # ------------------------------------------------------
+    # Unsupervised model prediction
+    #
+    # Isolation Forest
+    #
+    # Isolation Forest prediction:
+    #
+    #  1 = NORMAL
+    # -1 = ANOMALY
+    #
+    # decision_function:
+    #
+    # positive = more normal
+    # negative = more anomalous
+    # ------------------------------------------------------
+
+    else:
+
+        probability = None
+
+        anomaly_score = active_model.decision_function(
+            selected
+        )[0]
+
+        prediction_label = (
+            "ANOMALY"
+            if prediction == -1
+            else "NORMAL"
+        )
+
+
+    # ------------------------------------------------------
+    # Dashboard result
+    # ------------------------------------------------------
+
+    result = {
+
+        "time":
+            datetime.now().strftime(
+                "%H:%M:%S"
+            ),
+
+        "dataset":
+            "UNSW-NB15",
+
+        "model":
+            selected_model,
+
+        "protocol":
+            str(
+                flow.get(
+                    "proto",
+                    ""
+                )
+            ),
+
+        "service":
+            str(
+                flow.get(
+                    "service",
+                    ""
+                )
+            ),
+
+        "state":
+            str(
+                flow.get(
+                    "state",
+                    ""
+                )
+            ),
+
+        "packets":
+            float(
+                flow.get(
+                    "spkts"
+                ) or 0
+            )
+            +
+            float(
+                flow.get(
+                    "dpkts"
+                ) or 0
+            ),
+
+        "bytes":
+            float(
+                flow.get(
+                    "sbytes"
+                ) or 0
+            )
+            +
+            float(
+                flow.get(
+                    "dbytes"
+                ) or 0
+            ),
+
+        "prediction":
+            prediction_label,
+
+        # Random Forest / XGBoost only
+        "probability":
+            float(
+                probability
+            )
+            if probability is not None
+            else None,
+
+        # Isolation Forest only
+        "anomaly_score":
+            float(
+                anomaly_score
+            )
+            if anomaly_score is not None
+            else None
+    }
+
+
+    recent_predictions.appendleft(
+        result
+    )
+
+
+    # ------------------------------------------------------
+    # Debug output
+    # ------------------------------------------------------
+
+    print(
+        "UNSW DASHBOARD:",
+        result
+    )
+
+    print(
+        "UNSW model:",
+        selected_model
+    )
+
+    print(
+        "UNSW model type:",
+        model_type
+    )
+
+    print(
+        "UNSW feature count:",
+        selected.shape[1]
+    )
+
+
+    if model_type == "supervised":
+
+        print(
+            "Attack probability:",
+            probability
+        )
+
+    else:
+
+        print(
+            "Isolation Forest prediction:",
+            prediction_label
+        )
+
+        print(
+            "Isolation Forest anomaly score:",
+            anomaly_score
+        )
+
+
+    print(
+        "Stored predictions:",
+        len(
+            recent_predictions
+        )
+    )
+
+
+    # ------------------------------------------------------
+    # Return prediction to Network Agent
+    # ------------------------------------------------------
+
+    return {
+
+        "prediction":
+            int(
+                prediction
+            ),
+
+        "label":
+            prediction_label,
+
+        "attack_probability":
+            float(
+                probability
+            )
+            if probability is not None
+            else None,
+
+        "anomaly_score":
+            float(
+                anomaly_score
+            )
+            if anomaly_score is not None
+            else None,
+
+        "model":
+            selected_model
+    }
+
+
+"""
 encoder_path = BASE_DIR / "Passive_IDS" / "models" / "live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
 model_path = BASE_DIR / "Passive_IDS" / "models" / "random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl.joblib"
 columns_path = BASE_DIR / "Passive_IDS" / "models" / "live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
@@ -170,106 +624,10 @@ columns_path = BASE_DIR / "Passive_IDS" / "models" / "live_selected_columns_for_
 encoder = joblib.load(encoder_path)
 model = joblib.load(model_path)
 selected_columns = joblib.load(columns_path)
-
-#working old version -keep for now....
-"""
-@app.post("/predict/unsw")
-def predict_unsw(flow: dict):
-
-    # one flow = one dataframe row
-    df = pd.DataFrame([flow])
-
-    encoded = encoder.transform(df)
-
-    selected = encoded[selected_columns]
-
-    prediction = model.predict(selected)[0]
-
-    probability = model.predict_proba(selected)[0][1]
-
-    return {
-        "prediction": int(prediction),
-        "label": "ATTACK" if prediction == 1 else "NORMAL",
-        "attack_probability": float(probability)
-    }
-"""
-"""
-@app.post("/predict/unsw_")
-def predict_unsw_(flow: dict):
-
-    try:
-        print("\n--- NEW FLOW ---")
-        print(flow)
-
-        # One flow = one dataframe row
-        df = pd.DataFrame([flow])
-
-        print("DataFrame created")
-
-        encoded = encoder.transform(df)
-
-        print("Encoding completed")
-
-        selected = encoded[selected_columns]
-
-        print("Feature selection completed")
-
-        prediction = model.predict(selected)[0]
-
-        print("Prediction completed:", prediction)
-
-        probability = model.predict_proba(selected)[0][1]
-
-        print("Probability:", probability)
-
-        # Safely get numeric values
-        spkts = float(flow.get("spkts") or 0)
-        dpkts = float(flow.get("dpkts") or 0)
-
-        sbytes = float(flow.get("sbytes") or 0)
-        dbytes = float(flow.get("dbytes") or 0)
-
-        result = {
-            "time": datetime.now().strftime("%H:%M:%S"),
-
-            "protocol": str(flow.get("proto", "")),
-            "service": str(flow.get("service", "")),
-            "state": str(flow.get("state", "")),
-
-            "packets": spkts + dpkts,
-            "bytes": sbytes + dbytes,
-
-            "prediction":
-                "ATTACK" if prediction == 1 else "NORMAL",
-
-            "probability": float(probability)
-        }
-
-        recent_predictions.appendleft(result)
-
-        print("Added to dashboard")
-        print("----------------")
-
-        return {
-            "prediction": int(prediction),
-            "label":
-                "ATTACK" if prediction == 1 else "NORMAL",
-            "attack_probability": float(probability)
-        }
-
-    except Exception as e:
-
-        print("\n*** PREDICTION ERROR ***")
-        print(str(e))
-
-        traceback.print_exc()
-
-        print("************************\n")
-
-        raise
 """
 
 
+"""
 @app.post("/predict/unsw")
 def predict_unsw(flow: dict):
 
@@ -316,7 +674,7 @@ def predict_unsw(flow: dict):
         "attack_probability": float(probability)
     }
 
-
+"""
 
 @app.get("/test")
 def testing():

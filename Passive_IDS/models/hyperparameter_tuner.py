@@ -29,7 +29,7 @@ def tune_random_forest(X_train,y_train):
         estimator=model,
         param_distributions=parameters,
         n_iter=20,
-        scoring="f1",
+        scoring="roc_auc",
         cv=3,
         random_state=42,
         n_jobs=2, #parallel fit

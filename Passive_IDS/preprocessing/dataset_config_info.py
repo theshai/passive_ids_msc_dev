@@ -1,6 +1,7 @@
 DATASET_CONFIG={
     "unsw_nb15": {
         "file_path": "datasets/RAW/UNSW-NB15/UNSW_NB15_training-set.csv",
+        "file_path_test": "datasets/RAW/UNSW-NB15/UNSW_NB15_testing-set.csv",
         "label_column": "label",
         "columns": None,
          "categorical_columns": [

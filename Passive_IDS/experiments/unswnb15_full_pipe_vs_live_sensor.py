@@ -24,6 +24,7 @@ from models.hyperparameter_tuner import tune_random_forest
 from sklearn.ensemble import RandomForestClassifier
 import joblib
 
+
 """
 This file is an experiment file  that compare full pipline result vs live sensor selected result
 trying to prove that we get a good tradeoff from hand picking the features that are easy to produce
@@ -367,13 +368,15 @@ def main() -> None:
         y_pred_proba_live
     )
 
-    print("Live-compatible model metrics:")
+    print("Live-compatible model metrics (80/20) train only:")
     print(live_metrics)
+
+    
 
     #------------------------------------------------------------------------
     #save all artifacts to be used later on raw data for predicition
     #------------------------------------------------------------------------
-
+    """
     joblib.dump(
      live_model,
     "models/random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl.joblib"
@@ -389,7 +392,7 @@ def main() -> None:
      selected_columns,
     "models/live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
     )  
-
+    """
 
 
 

@@ -136,15 +136,63 @@ def main() -> None:
     #also removing catergorical columns
     #----------------------------------------------------------
     encoder = enc.create_encoder(X,dataset_name)
+    
+    #releasse memory before encoding -too big of a dataset
+    del df
+    del X
+    del y
+
+    gc.collect()
 
     X_train_encoded = encoder.fit_transform(X_train)
     X_test_encoded = encoder.transform(X_test) 
+
+    del X_train
+    del X_test
+
+    gc.collect()
 
     #no change expected, we dont have any categorical fields
     #in the training csv
 
     print("\nshape of X_train_encoded",X_train_encoded.shape)
-   
+
+    #experimet 1 full dataset training with random forest, no feature selection, no hyperparameter tuning
+    
+    print("\nTraining Random Forest on full dataset with no feature selection and no hyperparameter tuning...")
+    
+    baseModel = RandomForestClassifier(
+    random_state=42,
+    n_jobs=2
+    )
+
+    baseModel.fit(
+        X_train_encoded,
+        y_train
+    )
+
+    y_pred_base = baseModel.predict(
+        X_test_encoded
+    )
+
+    y_pred_proba_base = baseModel.predict_proba(
+        X_test_encoded
+    )[:, 1]
+
+    metrics_base = an.calculate_metrics(
+        y_test,
+        y_pred_base,
+        y_pred_proba_base
+    )
+
+    print("\nBase Random Forest metrics with no feature selection and no hyperparameter tuning:")
+    print(
+    "Accuracy, Precision, Recall, "
+    "F1, MCC, ROC-AUC, FPR"
+    )
+
+    print(metrics_base)
+    input("stop here to check the results, then press Enter to continue to feature selection and tuning...")
     """
     # ----------------------------------------------------------
     # Free large objects that are no longer needed
@@ -527,18 +575,8 @@ def main() -> None:
     
     # Free some memory before selection
 
-    print("Memory released before FS")
-
-    del df
-    del X
-    del y
-    del X_train
-    del X_test
-
-    gc.collect()
-
-   
-    #using the selected fs
+       
+    #using the selected fs -46 features, correlation 0.9
     X_train_selected, X_test_selected, selected_columns, removed_columns, method = \
     fs.apply_feature_selection(
         X_train_encoded,

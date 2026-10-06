@@ -104,6 +104,444 @@ def main() -> None:
     #from this point on, we only use the one merged file
     #-------------------------------------------------------------------------------
     
+    df, report = an.analyze_dataset(
+    file_path=config["file_path"],
+    dataset_name=dataset_name,
+    label_column=config["label_column"],
+    columns=config["columns"]
+    )
+
+    an.print_report(report)
+
+
+    print(
+        "\n----------------------------------------------------------"
+    )
+
+    print(
+        "SOURCE FILE COUNTS"
+    )
+
+    print(
+        "----------------------------------------------------------"
+    )
+
+    print(
+        df["source_file"].value_counts()
+    )
+
+
+    input(
+        "\nPress Enter to continue to source-based split..."
+    )
+
+
+    # ----------------------------------------------------------
+    # SOURCE-BASED TRAIN / TEST SPLIT
+    #
+    # Hold out one complete CIC-IDS2017 source file.
+    # This prevents rows from the same capture file appearing
+    # in both training and testing.
+    # ----------------------------------------------------------
+
+    test_source = (
+        "datasets/RAW/CIC-IDS2017/"
+        "Friday-WorkingHours-Afternoon-DDos.pcap_ISCX.csv"
+    )
+
+
+    df_train = df[
+        df["source_file"] != test_source
+    ].copy()
+
+
+    df_test = df[
+        df["source_file"] == test_source
+    ].copy()
+
+
+    print(
+        "\n----------------------------------------------------------"
+    )
+
+    print(
+        "SOURCE-BASED SPLIT"
+    )
+
+    print(
+        "----------------------------------------------------------"
+    )
+
+
+    print(
+        "Training rows:",
+        len(df_train)
+    )
+
+
+    print(
+        "Testing rows:",
+        len(df_test)
+    )
+
+
+    print(
+        "\nTRAIN SOURCE FILES:"
+    )
+
+    print(
+        df_train["source_file"].value_counts()
+    )
+
+
+    print(
+        "\nTEST SOURCE FILE:"
+    )
+
+    print(
+        df_test["source_file"].value_counts()
+    )
+
+
+    # ----------------------------------------------------------
+    # Prepare X / y separately for train and test
+    # ----------------------------------------------------------
+
+    X_train, y_train = prep.prepare_xy(
+        df_train,
+        dataset_name
+    )
+
+
+    X_test, y_test = prep.prepare_xy(
+        df_test,
+        dataset_name
+    )
+
+
+    # ----------------------------------------------------------
+    # IMPORTANT
+    #
+    # DO NOT manually drop source_file here.
+    #
+    # The encoder is already configured to remove source_file,
+    # so source_file must still exist when fit_transform()
+    # and transform() are called.
+    # ----------------------------------------------------------
+
+
+    # ----------------------------------------------------------
+    # Print train/test shapes
+    # ----------------------------------------------------------
+
+    print(
+        "\nX_train shape before encoder:",
+        X_train.shape
+    )
+
+
+    print(
+        "X_test shape before encoder:",
+        X_test.shape
+    )
+
+
+    print(
+        "y_train shape:",
+        y_train.shape
+    )
+
+
+    print(
+        "y_test shape:",
+        y_test.shape
+    )
+
+
+    # ----------------------------------------------------------
+    # Print class distributions
+    # ----------------------------------------------------------
+
+    print(
+        "\n----------------------------------------------------------"
+    )
+
+    print(
+        "TRAIN CLASS DISTRIBUTION"
+    )
+
+    print(
+        "----------------------------------------------------------"
+    )
+
+
+    print(
+        y_train.value_counts()
+    )
+
+
+    print(
+        "\nTRAIN CLASS PERCENTAGE"
+    )
+
+
+    print(
+        y_train.value_counts(
+            normalize=True
+        ) * 100
+    )
+
+
+    print(
+        "\n----------------------------------------------------------"
+    )
+
+    print(
+        "TEST CLASS DISTRIBUTION"
+    )
+
+    print(
+        "----------------------------------------------------------"
+    )
+
+
+    print(
+        y_test.value_counts()
+    )
+
+
+    print(
+        "\nTEST CLASS PERCENTAGE"
+    )
+
+
+    print(
+        y_test.value_counts(
+            normalize=True
+        ) * 100
+    )
+
+
+    input(
+        "\nPress Enter to continue to encoding..."
+    )
+
+
+    # ----------------------------------------------------------
+    # Create encoder
+    #
+    # The encoder also removes configured columns such as
+    # source_file, so this step is still required.
+    # ----------------------------------------------------------
+
+    encoder = enc.create_encoder(
+        X_train,
+        dataset_name
+    )
+
+
+    # ----------------------------------------------------------
+    # Free full original dataframes before encoding
+    # ----------------------------------------------------------
+
+    del df
+    del df_train
+    del df_test
+
+    gc.collect()
+
+
+    # ----------------------------------------------------------
+    # Fit encoder on TRAIN only
+    #
+    # source_file still exists here, so the encoder can remove it.
+    # ----------------------------------------------------------
+
+    X_train_encoded = encoder.fit_transform(
+        X_train
+    )
+
+
+    # ----------------------------------------------------------
+    # Transform TEST using same fitted encoder
+    # ----------------------------------------------------------
+
+    X_test_encoded = encoder.transform(
+        X_test
+    )
+
+
+    print(
+        "\n----------------------------------------------------------"
+    )
+
+    print(
+        "ENCODED DATA"
+    )
+
+    print(
+        "----------------------------------------------------------"
+    )
+
+
+    print(
+        "X_train_encoded shape:",
+        X_train_encoded.shape
+    )
+
+
+    print(
+        "X_test_encoded shape:",
+        X_test_encoded.shape
+    )
+
+
+    # ----------------------------------------------------------
+    # Confirm source_file was removed by encoder
+    # ----------------------------------------------------------
+
+    print(
+        "\nEncoded feature count:",
+        X_train_encoded.shape[1]
+    )
+
+
+    print(
+        "\nEncoded columns:"
+    )
+
+
+    print(
+        X_train_encoded.columns.tolist()
+    )
+
+
+    # ----------------------------------------------------------
+    # Free original unencoded matrices
+    # ----------------------------------------------------------
+
+    del X_train
+    del X_test
+
+    gc.collect()
+
+
+    # ----------------------------------------------------------
+    # TEST 1
+    #
+    # All remaining features
+    # No feature selection
+    # No hyperparameter tuning
+    # ----------------------------------------------------------
+
+    print(
+        "\n----------------------------------------------------------"
+    )
+
+    print(
+        "CIC-IDS2017 BASELINE"
+    )
+
+    print(
+        "ALL FEATURES - NO FEATURE SELECTION - NO TUNING"
+    )
+
+    print(
+        "----------------------------------------------------------"
+    )
+
+
+    modelBaseLine = RandomForestClassifier(
+        n_estimators=100,
+        min_samples_split=5,
+        min_samples_leaf=2,
+        max_features="sqrt",
+        max_depth=40,
+        class_weight=None,
+        random_state=42,
+        n_jobs=2
+    )
+
+
+    print(
+        "Training baseline Random Forest..."
+    )
+
+
+    modelBaseLine.fit(
+        X_train_encoded,
+        y_train
+    )
+
+
+    print(
+        "Training completed."
+    )
+
+
+    # ----------------------------------------------------------
+    # Class predictions
+    # ----------------------------------------------------------
+
+    y_pred_baseline = modelBaseLine.predict(
+        X_test_encoded
+    )
+
+
+    # ----------------------------------------------------------
+    # Probability of class 1 = ATTACK
+    # ----------------------------------------------------------
+
+    y_pred_proba_baseline = modelBaseLine.predict_proba(
+        X_test_encoded
+    )[:, 1]
+
+
+    # ----------------------------------------------------------
+    # Calculate metrics
+    # ----------------------------------------------------------
+
+    baseLine_metrics = an.calculate_metrics(
+        y_test,
+        y_pred_baseline,
+        y_pred_proba_baseline
+    )
+
+
+    print(
+        "\n----------------------------------------------------------"
+    )
+
+    print(
+        "CIC-IDS2017 BASELINE RESULTS"
+    )
+
+    print(
+        "SOURCE-BASED HOLDOUT"
+    )
+
+    print(
+        "----------------------------------------------------------"
+    )
+
+
+    print(
+        "Accuracy, Precision, Recall, "
+        "F1, MCC, ROC-AUC, FPR"
+    )
+
+
+    print(
+        baseLine_metrics
+    )
+
+
+    input(
+        "\nPress Enter to continue to feature selection and tuning..."
+    )
+    
+    """
+    """
     df , report = an.analyze_dataset(
         file_path=config["file_path"],
         dataset_name=dataset_name,
@@ -113,6 +551,10 @@ def main() -> None:
 
     an.print_report(report)
 
+    print(
+    df["source_file"].value_counts()
+    )
+    input("\nPress Enter to continue to preprocessing...")
     #clean the df - no need we cleaned each file seperetly bbefore merge
     #df_clean = cl.clean_dataset(df)
 
@@ -124,12 +566,14 @@ def main() -> None:
         X,
         y,
         dataset_name,
-        test_size=0.2,
+        test_size=0.5,
         random_state=42
     )
 
     #testing columns before drop and encode
     print("\nshape of X_train",X_train.shape)
+
+    
 
     #----------------------------------------------------------
     #encoding the categorical features using one-hot encoding,
@@ -137,13 +581,71 @@ def main() -> None:
     #----------------------------------------------------------
     encoder = enc.create_encoder(X,dataset_name)
 
+    del df
+    del X
+    del y
+
+    gc.collect()
+
+
     X_train_encoded = encoder.fit_transform(X_train)
     X_test_encoded = encoder.transform(X_test) 
 
+
+    
     #no change expected, we dont have any categorical fields
     #in the training csv
 
     print("\nshape of X_train_encoded",X_train_encoded.shape)
+
+    #Test number 1, all features value, no fs and no hyperparameter tuning, just to see how the model performs with all features
+
+    print("get metrics with all the features, no feature selection, no tuning, just to see how the model performs with all the features and no tuning.")
+    # had to used 500 limit due to size of dataset
+    modelBaseLine = RandomForestClassifier(
+                    n_estimators=100,
+                    min_samples_split=5,
+                    min_samples_leaf=2,
+                    max_features="sqrt",
+                    max_depth=40,
+                    class_weight=None,#"balanced",
+                    random_state=42,
+                    n_jobs=2
+                )
+    modelBaseLine.fit(X_train_encoded, y_train)
+    # Class predictions
+    y_pred_baseline = modelBaseLine.predict(
+        X_test_encoded
+    )
+
+    # Probability of class 1 (ATTACK)
+    y_pred_proba_baseline = modelBaseLine.predict_proba(
+        X_test_encoded
+    )[:, 1]
+
+    baseLine_metrics = an.calculate_metrics(
+
+        y_test,
+
+        y_pred_baseline,
+
+        y_pred_proba_baseline
+    )
+    print(
+        "\nBefore preprocessing  metrics:"
+    )
+
+    print(
+        baseLine_metrics
+    )
+
+    print(
+        "Accuracy, Precision, Recall, "
+        "F1, MCC, ROC-AUC, FPR"
+    )
+
+    input("\nPress Enter to continue to feature selection and tuning...")
+    """
    
     """
     # ----------------------------------------------------------
@@ -538,7 +1040,7 @@ def main() -> None:
     gc.collect()
 
    
-    #using the selected fs
+    #using the selected fs this gives us the 46 that we chose
     X_train_selected, X_test_selected, selected_columns, removed_columns, method = \
     fs.apply_feature_selection(
         X_train_encoded,

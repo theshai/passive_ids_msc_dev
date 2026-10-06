@@ -113,6 +113,8 @@ def main() -> None:
 
     an.print_report(report)
 
+    input("Press Enter to continue...")
+
     #clean the df - no need we cleaned each file seperetly bbefore merge
     #df_clean = cl.clean_dataset(df)
 
@@ -136,6 +138,13 @@ def main() -> None:
     #also removing catergorical columns
     #----------------------------------------------------------
     encoder = enc.create_encoder(X,dataset_name)
+    
+    # remove from memry the large objects that are no longer needed
+    del df
+    del df_train
+    del df_test
+
+    gc.collect()
 
     X_train_encoded = encoder.fit_transform(X_train)
     X_test_encoded = encoder.transform(X_test) 
@@ -555,12 +564,10 @@ def main() -> None:
 
     print("Saving selected columns as joblib")
 
-    """
     joblib.dump(
     selected_columns,
     "models/cic2017/cic2017_correlation_090_selected_46_columns.joblib"
     )
-    """
     
 
     """
@@ -629,8 +636,6 @@ def main() -> None:
     print("\nRF parameters selected using 200k tuning:")
     print(metrics_200k)
     """
-
-    #using classifiet that was used on the 500K due to size of the dataset, it is more balanced and has better results
     rf_500k = RandomForestClassifier(
         n_estimators=500,
         min_samples_split=5,
@@ -664,13 +669,12 @@ def main() -> None:
     print("\nRF parameters selected using 500k tuning:")
     print(metrics_500k)
 
-    """
     #now save the model.....
     joblib.dump(
     rf_500k,
     "models/cic2017/cic2017_random_forest_46_columns.joblib"
     )
-    """
+
        
          
   

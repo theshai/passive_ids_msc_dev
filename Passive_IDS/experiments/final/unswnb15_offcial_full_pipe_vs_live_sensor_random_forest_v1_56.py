@@ -9,7 +9,7 @@ import preprocessing.encoderer as enc
 import preprocessing.scaler as sc
 import preprocessing.featureselector as fs
 import preprocessing.analyzer as an
-
+import joblib
 import sklearn as sk
 
 from models.hyperparameter_tuner import tune_random_forest
@@ -1013,23 +1013,29 @@ def main() -> None:
     #------------------------------------------------------------------------
     #save all artifacts to be used later on raw data for predicition
     #------------------------------------------------------------------------
-    """
+    
     joblib.dump(
      live_model,
-    "models/random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl.joblib"
+    "models/unswnb15/random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl_official_80_20.joblib"
     ) 
 
     joblib.dump(
-     encoder_live,
-    "models/live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
+     live_encoder,
+    "models/unswnb15/random_forest_live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl_official_80_20.joblib"
     ) 
 
-    print("selected columns:",selected_columns)
+    live_selected_columns = X_train_live_encoded.columns.tolist()
+
+    print(
+    "Live encoded selected columns:",
+    live_selected_columns
+    )
+
     joblib.dump(
-     selected_columns,
-    "models/live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
+     live_selected_columns,
+    "models/unswnb15/random_forest_live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl_official_80_20.joblib"
     )  
-    """
+    
 
     print("\n***end time****",datetime.now().strftime("%H:%M:%S"))
 

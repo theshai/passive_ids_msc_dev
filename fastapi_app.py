@@ -167,6 +167,7 @@ def get_predictions():
 #--------------------------------------------------------------------------------------------------------------------
 
 #staring with rf
+"""
 unsw_rf_encoder_path = (
     BASE_DIR / "Passive_IDS" / "models" /
     "live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
@@ -180,6 +181,21 @@ unsw_rf_model_path = (
 unsw_rf_columns_path = (
     BASE_DIR / "Passive_IDS" / "models" /
     "live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl.joblib"
+)
+"""
+unsw_rf_encoder_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "random_forest_live_encoder_for_unsenb15_wo_swin_dwin_sttl_dttl_official_80_20.joblib"
+)
+
+unsw_rf_model_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "random_forest_model_for_unswnb15_wo_swin_dwin_sttl_dttl_official_80_20.joblib"
+)
+
+unsw_rf_columns_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "random_forest_live_selected_columns_for_unsenb15_wo_swin_dwin_sttl_dttl_official_80_20.joblib"
 )
 
 unsw_rf_encoder = joblib.load(

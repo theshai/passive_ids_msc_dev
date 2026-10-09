@@ -19,13 +19,14 @@ capture_config={
     "model":"random_forest",
     "protocol":"all"
 }
-
+'''
 model_metrics = {
     "accuracy": 0.9499558014200576,
     "recall": 0.9728518161632242,
     "f1": 0.9635869452455547,
     "fpr": 0.09883928571428571
 }
+'''
 
 app = FastAPI()
 
@@ -65,7 +66,7 @@ class CaptureRequest(BaseModel):
     model: str
     protocol: str
 
-
+'''
 @app.get("/status")
 def get_status():
 
@@ -81,6 +82,67 @@ def get_status():
 
         "protocol":
             capture_config["protocol"], 
+
+        "metrics":
+            model_metrics
+    }
+'''
+model_metrics_registry = {
+    "unsw": {
+        "random_forest": {
+            "accuracy": 0.899,
+            "recall": 0.950,
+            "f1": 0.912,
+            "fpr": 0.0162
+        },
+        "xgboost": {
+            "accuracy": 0.869,
+            "recall": 0.976,
+            "f1": 0.891,
+            "fpr": 0.26
+        }
+    },
+
+    "cic2017": {
+        "random_forest": {
+            "accuracy": 0.9990418402885751,
+            "recall": 0.9989547611218115,
+            "f1": 0.9971103856140577,
+            "fpr": 0.0009408915180027016
+        },
+        "xgboost": {
+            "accuracy": 0.9991467908452019,
+            "recall": 0.9981678958989054,
+            "f1": 0.997424056612077,
+            "fpr": 0.0006590898504820904
+        }
+    }
+}
+
+@app.get("/status")
+def get_status():
+
+    dataset = capture_config["dataset"]
+    model = capture_config["model"]
+
+    model_metrics = (
+        model_metrics_registry
+        .get(dataset, {})
+        .get(model, {})
+    )
+
+    return {
+        "capture_running":
+            capture_config["running"],
+
+        "dataset":
+            dataset,
+
+        "model":
+            model,
+
+        "protocol":
+            capture_config["protocol"],
 
         "metrics":
             model_metrics

@@ -211,6 +211,7 @@ unsw_rf_selected_columns = joblib.load(
 )
 
 #now xgboost
+"""
 unsw_xgb_model_path = (
     BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
     "xgboost_live_unsw.joblib"
@@ -225,6 +226,22 @@ unsw_xgb_columns_path = (
     BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
     "xgboost_live_selected_columns_unsw.joblib"
 )
+"""
+unsw_xgb_model_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "xgboost_live_unsw_official_80_20.joblib"
+)
+
+unsw_xgb_encoder_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "xgboost_live_encoder_unsw_official_80_20.joblib"
+)
+
+unsw_xgb_columns_path = (
+    BASE_DIR / "Passive_IDS" / "models" / "unswnb15" /
+    "xgboost_live_selected_columns_unsw_official_80_20.joblib"
+)
+
 
 unsw_xgb_model = joblib.load(
     unsw_xgb_model_path

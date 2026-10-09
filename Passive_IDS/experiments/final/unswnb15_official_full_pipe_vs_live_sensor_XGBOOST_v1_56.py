@@ -1082,7 +1082,7 @@ def main() -> None:
     # official test results.
     # ==========================================================
 
-    """
+    
 
     input(
         "\nIf you continue you are going to overwrite "
@@ -1094,7 +1094,7 @@ def main() -> None:
 
         live_model,
 
-        "models/unswnb15/xgboost_live_unsw.joblib"
+        "models/unswnb15/xgboost_live_unsw_official_80_20.joblib"
     )
 
 
@@ -1102,7 +1102,7 @@ def main() -> None:
 
         live_encoder,
 
-        "models/unswnb15/xgboost_live_encoder_unsw.joblib"
+        "models/unswnb15/xgboost_live_encoder_unsw_official_80_20.joblib"
     )
 
 
@@ -1132,10 +1132,10 @@ def main() -> None:
         live_encoded_columns,
 
         "models/unswnb15/"
-        "xgboost_live_selected_columns_unsw.joblib"
+        "xgboost_live_selected_columns_unsw_official_80_20.joblib"
     )
 
-    """
+  
 
 
     print(
